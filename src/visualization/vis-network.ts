@@ -2,17 +2,19 @@ import { BaseGraphVisualizer } from './base';
 import type { GraphSnapshot, VisualizationEvents, VisualNode, VisualEdge } from './types';
 
 // Dynamic imports for vis-network to support optional dependency
-let Network: any;
-let DataSet: any;
+let Network: unknown;
+let DataSet: unknown;
 let visNetworkAvailable = false;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const visNetwork = require('vis-network');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   const visData = require('vis-data');
   Network = visNetwork.Network;
   DataSet = visData.DataSet;
   visNetworkAvailable = true;
-} catch (e) {
+} catch {
   // vis-network is not available - will throw error when class is instantiated
 }
 

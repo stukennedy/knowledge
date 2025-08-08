@@ -2,10 +2,11 @@ import { BaseGraphVisualizer } from './base';
 import type { GraphSnapshot, VisualNode, VisualEdge, VisualizationEvents } from './types';
 
 // Dynamic import for d3 to support optional dependency
-let d3: any;
+let d3: unknown;
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   d3 = require('d3');
-} catch (e) {
+} catch {
   // D3 is not available - will throw error when class is instantiated
 }
 

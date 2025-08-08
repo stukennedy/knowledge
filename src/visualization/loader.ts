@@ -23,23 +23,31 @@ let hasThree = false;
 try {
   require.resolve('d3');
   hasD3 = true;
-} catch {}
+} catch {
+  // D3 not available
+}
 
 try {
   require.resolve('vis-network');
   require.resolve('vis-data');
   hasVisNetwork = true;
-} catch {}
+} catch {
+  // vis-network not available
+}
 
 try {
   require.resolve('cytoscape');
   hasCytoscape = true;
-} catch {}
+} catch {
+  // Cytoscape not available
+}
 
 try {
   require.resolve('three');
   hasThree = true;
-} catch {}
+} catch {
+  // Three.js not available
+}
 
 export const hasVisualizationSupport = hasD3 || hasVisNetwork || hasCytoscape || hasThree;
 

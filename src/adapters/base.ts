@@ -24,7 +24,7 @@ export interface DatabaseAdapter {
   /**
    * Execute a raw SQL query
    */
-  execute<T = unknown>(query: string, params?: any[]): Promise<T[]>;
+  execute<T = unknown>(query: string, params?: unknown[]): Promise<T[]>;
   
   /**
    * Begin a transaction
@@ -39,7 +39,7 @@ export interface DatabaseAdapter {
   deleteNode(id: string): Promise<boolean>;
   getNode(id: string): Promise<Node | null>;
   getNodes(ids: string[]): Promise<Node[]>;
-  queryNodes(conditions: Record<string, any>, limit?: number, offset?: number): Promise<Node[]>;
+  queryNodes(conditions: Record<string, unknown>, limit?: number, offset?: number): Promise<Node[]>;
   
   /**
    * Edge operations
@@ -49,7 +49,7 @@ export interface DatabaseAdapter {
   deleteEdge(id: string): Promise<boolean>;
   getEdge(id: string): Promise<Edge | null>;
   getEdges(ids: string[]): Promise<Edge[]>;
-  queryEdges(conditions: Record<string, any>, limit?: number, offset?: number): Promise<Edge[]>;
+  queryEdges(conditions: Record<string, unknown>, limit?: number, offset?: number): Promise<Edge[]>;
   
   /**
    * Index operations
@@ -89,7 +89,7 @@ export interface DatabaseAdapter {
  * Transaction context for atomic operations
  */
 export interface TransactionContext {
-  execute<T = unknown>(query: string, params?: any[]): Promise<T[]>;
+  execute<T = unknown>(query: string, params?: unknown[]): Promise<T[]>;
   rollback(): Promise<void>;
 }
 
@@ -111,7 +111,7 @@ export interface AdapterConfig {
   /**
    * Database connection string or configuration
    */
-  connection?: string | Record<string, any>;
+  connection?: string | Record<string, unknown>;
   
   /**
    * Enable debug logging
@@ -131,7 +131,7 @@ export interface AdapterConfig {
   /**
    * Additional adapter-specific options
    */
-  options?: Record<string, any>;
+  options?: Record<string, unknown>;
 }
 
 /**
@@ -150,14 +150,14 @@ export abstract class BaseAdapter implements DatabaseAdapter {
     return this.tablePrefix ? `${this.tablePrefix}_${table}` : table;
   }
   
-  protected log(_message: string, ..._args: any[]): void {
+  protected log(_message: string, ..._args: unknown[]): void {
     // Logging disabled for now to avoid console warnings
     // if (this.config.debug) {
     //   console.log(`[KnowledgeGraph] ${message}`, ...args);
     // }
   }
   
-  protected error(message: string, error?: any): void {
+  protected error(message: string, error?: unknown): void {
     // Use console.error which is allowed by linter
     console.error(`[KnowledgeGraph Error] ${message}`, error);
   }

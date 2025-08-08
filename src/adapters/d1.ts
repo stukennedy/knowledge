@@ -130,7 +130,7 @@ export class D1Adapter extends BaseAdapter {
     `);
   }
   
-  async execute<T = unknown>(query: string, params: any[] = []): Promise<T[]> {
+  async execute<T = unknown>(query: string, params: unknown[] = []): Promise<T[]> {
     if (!this.db) throw new Error('Database not initialized');
     
     try {
@@ -149,7 +149,7 @@ export class D1Adapter extends BaseAdapter {
     // D1 doesn't support explicit transactions in the same way
     // We'll simulate it with a try-catch and manual rollback if needed
     const tx: TransactionContext = {
-      execute: async <U = unknown>(query: string, params: any[] = []): Promise<U[]> => {
+      execute: async <U = unknown>(query: string, params: unknown[] = []): Promise<U[]> => {
         return this.execute<U>(query, params);
       },
       rollback: async () => {
@@ -191,7 +191,7 @@ export class D1Adapter extends BaseAdapter {
   
   async updateNode(id: string, updates: Partial<NewNode>): Promise<Node | null> {
     const setClauses: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
     
     if (updates.type !== undefined) {
       setClauses.push('type = ?');
@@ -233,11 +233,11 @@ export class D1Adapter extends BaseAdapter {
   
   async getNode(id: string): Promise<Node | null> {
     const query = `SELECT * FROM kg_nodes WHERE id = ? LIMIT 1`;
-    const results = await this.execute<any>(query, [id]);
+    const results = await this.execute<Record<string, unknown>>(query, [id]);
     
     if (results.length === 0) return null;
     
-    return this.deserializeNode(results[0]);
+    return this.deserializeNode(results[0]!);
   }
   
   async getNodes(ids: string[]): Promise<Node[]> {
@@ -245,14 +245,14 @@ export class D1Adapter extends BaseAdapter {
     
     const placeholders = ids.map(() => '?').join(',');
     const query = `SELECT * FROM kg_nodes WHERE id IN (${placeholders})`;
-    const results = await this.execute<any>(query, ids);
+    const results = await this.execute<Record<string, unknown>>(query, ids);
     
     return results.map(n => this.deserializeNode(n));
   }
   
-  async queryNodes(conditions: Record<string, any>, limit = 100, offset = 0): Promise<Node[]> {
+  async queryNodes(conditions: Record<string, unknown>, limit = 100, offset = 0): Promise<Node[]> {
     const whereClauses: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
     
     for (const [key, value] of Object.entries(conditions)) {
       whereClauses.push(`${key} = ?`);
@@ -267,7 +267,7 @@ export class D1Adapter extends BaseAdapter {
       LIMIT ? OFFSET ?
     `;
     
-    const results = await this.execute<any>(query, params);
+    const results = await this.execute<Record<string, unknown>>(query, params);
     return results.map(n => this.deserializeNode(n));
   }
   
@@ -297,7 +297,7 @@ export class D1Adapter extends BaseAdapter {
   
   async updateEdge(id: string, updates: Partial<NewEdge>): Promise<Edge | null> {
     const setClauses: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
     
     if (updates.type !== undefined) {
       setClauses.push('type = ?');
@@ -332,11 +332,11 @@ export class D1Adapter extends BaseAdapter {
   
   async getEdge(id: string): Promise<Edge | null> {
     const query = `SELECT * FROM kg_edges WHERE id = ? LIMIT 1`;
-    const results = await this.execute<any>(query, [id]);
+    const results = await this.execute<Record<string, unknown>>(query, [id]);
     
     if (results.length === 0) return null;
     
-    return this.deserializeEdge(results[0]);
+    return this.deserializeEdge(results[0]!);
   }
   
   async getEdges(ids: string[]): Promise<Edge[]> {
@@ -344,14 +344,14 @@ export class D1Adapter extends BaseAdapter {
     
     const placeholders = ids.map(() => '?').join(',');
     const query = `SELECT * FROM kg_edges WHERE id IN (${placeholders})`;
-    const results = await this.execute<any>(query, ids);
+    const results = await this.execute<Record<string, unknown>>(query, ids);
     
     return results.map(e => this.deserializeEdge(e));
   }
   
-  async queryEdges(conditions: Record<string, any>, limit = 100, offset = 0): Promise<Edge[]> {
+  async queryEdges(conditions: Record<string, unknown>, limit = 100, offset = 0): Promise<Edge[]> {
     const whereClauses: string[] = [];
-    const params: any[] = [];
+    const params: unknown[] = [];
     
     for (const [key, value] of Object.entries(conditions)) {
       whereClauses.push(`${key} = ?`);
@@ -366,7 +366,7 @@ export class D1Adapter extends BaseAdapter {
       LIMIT ? OFFSET ?
     `;
     
-    const results = await this.execute<any>(query, params);
+    const results = await this.execute<Record<string, unknown>>(query, params);
     return results.map(e => this.deserializeEdge(e));
   }
   
@@ -516,9 +516,9 @@ export class D1Adapter extends BaseAdapter {
   }
   
   async getStats(): Promise<DatabaseStats> {
-    const nodeCount = await this.execute<any>('SELECT COUNT(*) as count FROM kg_nodes');
-    const edgeCount = await this.execute<any>('SELECT COUNT(*) as count FROM kg_edges');
-    const indexCount = await this.execute<any>('SELECT COUNT(*) as count FROM kg_node_indices');
+    const nodeCount = await this.execute<{count: number}>('SELECT COUNT(*) as count FROM kg_nodes');
+    const edgeCount = await this.execute<{count: number}>('SELECT COUNT(*) as count FROM kg_edges');
+    const indexCount = await this.execute<{count: number}>('SELECT COUNT(*) as count FROM kg_node_indices');
     
     return {
       nodeCount: nodeCount[0]?.count || 0,
@@ -534,29 +534,29 @@ export class D1Adapter extends BaseAdapter {
   }
   
   // Helper methods
-  private deserializeNode(row: any): Node {
+  private deserializeNode(row: Record<string, unknown>): Node {
     return {
-      id: row.id,
-      type: row.type,
-      label: row.label,
-      properties: typeof row.properties === 'string' ? JSON.parse(row.properties) : row.properties,
-      confidence: row.confidence,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at),
-      sourceSessionIds: row.source_session_ids ? JSON.parse(row.source_session_ids) : undefined,
+      id: row.id as string,
+      type: row.type as string,
+      label: row.label as string,
+      properties: typeof row.properties === 'string' ? JSON.parse(row.properties) : row.properties || {},
+      confidence: row.confidence as number,
+      createdAt: new Date(row.created_at as string | number),
+      updatedAt: new Date(row.updated_at as string | number),
+      sourceSessionIds: row.source_session_ids ? JSON.parse(row.source_session_ids as string) : undefined,
     };
   }
   
-  private deserializeEdge(row: any): Edge {
+  private deserializeEdge(row: Record<string, unknown>): Edge {
     return {
-      id: row.id,
-      type: row.type,
-      fromNodeId: row.from_node_id,
-      toNodeId: row.to_node_id,
-      properties: typeof row.properties === 'string' ? JSON.parse(row.properties) : row.properties,
-      confidence: row.confidence,
-      createdAt: new Date(row.created_at),
-      sourceSessionIds: row.source_session_ids ? JSON.parse(row.source_session_ids) : undefined,
+      id: row.id as string,
+      type: row.type as string,
+      fromNodeId: row.from_node_id as string,
+      toNodeId: row.to_node_id as string,
+      properties: typeof row.properties === 'string' ? JSON.parse(row.properties) : row.properties || {},
+      confidence: row.confidence as number,
+      createdAt: new Date(row.created_at as string | number),
+      sourceSessionIds: row.source_session_ids ? JSON.parse(row.source_session_ids as string) : undefined,
     };
   }
 }

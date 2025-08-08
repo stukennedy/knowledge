@@ -2,18 +2,19 @@ import { BaseGraphVisualizer } from './base';
 import type { GraphSnapshot, VisualizationEvents } from './types';
 
 // Dynamic import for cytoscape to support optional dependency
-let cytoscape: any;
+let cytoscape: unknown;
 let cytoscapeAvailable = false;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   cytoscape = require('cytoscape');
   cytoscapeAvailable = true;
-} catch (e) {
+} catch {
   // cytoscape is not available - will throw error when class is instantiated
 }
 
-type Core = any;
-type LayoutOptions = any;
+type Core = unknown;
+type LayoutOptions = unknown;
 
 /**
  * Cytoscape.js implementation of graph visualizer

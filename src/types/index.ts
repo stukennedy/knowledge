@@ -96,7 +96,7 @@ export type EdgeType = CommonEdgeType | string;
 /**
  * Core knowledge node interface
  */
-export interface KnowledgeNode<T = Record<string, any>> {
+export interface KnowledgeNode<T = Record<string, unknown>> {
   id: string;
   type: NodeType | string;
   label: string;
@@ -110,7 +110,7 @@ export interface KnowledgeNode<T = Record<string, any>> {
 /**
  * Core knowledge edge interface
  */
-export interface KnowledgeEdge<T = Record<string, any>> {
+export interface KnowledgeEdge<T = Record<string, unknown>> {
   id: string;
   type: EdgeType | string;
   fromNodeId: string;
@@ -128,7 +128,7 @@ export interface QueryResult<N = KnowledgeNode, E = KnowledgeEdge> {
   nodes: N[];
   edges: E[];
   relevanceScore?: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -150,7 +150,7 @@ export interface QueryOptions {
 /**
  * Options for node creation/update
  */
-export interface NodeOptions<TNodeType extends string = string, TProperties = Record<string, any>> {
+export interface NodeOptions<TNodeType extends string = string, TProperties = Record<string, unknown>> {
   type: TNodeType;
   label: string;
   properties?: TProperties;
@@ -162,7 +162,7 @@ export interface NodeOptions<TNodeType extends string = string, TProperties = Re
 /**
  * Options for edge creation/update
  */
-export interface EdgeOptions<TEdgeType extends string = string, TProperties = Record<string, any>> {
+export interface EdgeOptions<TEdgeType extends string = string, TProperties = Record<string, unknown>> {
   type: TEdgeType;
   fromNodeId: string;
   toNodeId: string;
@@ -211,7 +211,7 @@ export interface GraphStats {
 /**
  * Extracted knowledge data for processing
  */
-export interface ExtractedNodeData<T = Record<string, any>> {
+export interface ExtractedNodeData<T = Record<string, unknown>> {
   type: NodeType | string;
   label: string;
   properties: T;
@@ -219,7 +219,7 @@ export interface ExtractedNodeData<T = Record<string, any>> {
   sourceSessionIds?: string[];
 }
 
-export interface ExtractedEdgeData<T = Record<string, any>> {
+export interface ExtractedEdgeData<T = Record<string, unknown>> {
   type: EdgeType | string;
   fromNodeLabel: string;
   toNodeLabel: string;
@@ -232,7 +232,7 @@ export interface ExtractedKnowledge<N = ExtractedNodeData, E = ExtractedEdgeData
   nodes: N[];
   edges: E[];
   confidence: number;
-  metadata?: Record<string, any>;
+  metadata?: Record<string, unknown>;
 }
 
 /**
@@ -253,7 +253,7 @@ export interface SearchOptions {
 export interface BatchResult {
   successful: number;
   failed: number;
-  errors?: Array<{ item: any; error: Error }>;
+  errors?: Array<{ item: unknown; error: Error }>;
 }
 
 /**
@@ -261,7 +261,7 @@ export interface BatchResult {
  */
 export interface Migration {
   version: string;
-  up: (db: any) => Promise<void>;
-  down: (db: any) => Promise<void>;
+  up: (db: unknown) => Promise<void>;
+  down: (db: unknown) => Promise<void>;
   description?: string;
 }

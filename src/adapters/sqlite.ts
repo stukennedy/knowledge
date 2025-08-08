@@ -122,7 +122,7 @@ export class SQLiteAdapter extends BaseAdapter {
     `);
   }
 
-  async execute<T = unknown>(query: string, params: any[] = []): Promise<T[]> {
+  async execute<T = unknown>(query: string, params: unknown[] = []): Promise<T[]> {
     if (!this.db) throw new Error('Database not initialized');
 
     try {
@@ -134,7 +134,7 @@ export class SQLiteAdapter extends BaseAdapter {
     }
   }
 
-  async executeUpdate(query: string, params: any[] = []): Promise<{ changes: number }> {
+  async executeUpdate(query: string, params: unknown[] = []): Promise<{ changes: number }> {
     if (!this.db) throw new Error('Database not initialized');
 
     try {
@@ -151,9 +151,10 @@ export class SQLiteAdapter extends BaseAdapter {
 
     return new Promise((resolve, reject) => {
       try {
-        const result = this.db!.transaction(async () => {
+        if (!this.db) throw new Error('Database not initialized');
+        const result = this.db.transaction(async () => {
           const tx: TransactionContext = {
-            execute: async <U = unknown>(query: string, params: any[] = []): Promise<U[]> => {
+            execute: async <U = unknown>(query: string, params: unknown[] = []): Promise<U[]> => {
               return this.execute<U>(query, params);
             },
             rollback: async () => {
@@ -215,10 +216,11 @@ export class SQLiteAdapter extends BaseAdapter {
     return result.map((n) => this.deserializeNode(n));
   }
 
-  async queryNodes(conditions: Record<string, any>, limit = 100, offset = 0): Promise<Node[]> {
+  async queryNodes(conditions: Record<string, unknown>, limit = 100, offset = 0): Promise<Node[]> {
     if (!this.drizzle) throw new Error('Database not initialized');
 
     const whereConditions = Object.entries(conditions).map(([key, value]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const column = (schema.nodes as any)[key];
       return eq(column, value);
     });
@@ -273,10 +275,11 @@ export class SQLiteAdapter extends BaseAdapter {
     return result.map((e) => this.deserializeEdge(e));
   }
 
-  async queryEdges(conditions: Record<string, any>, limit = 100, offset = 0): Promise<Edge[]> {
+  async queryEdges(conditions: Record<string, unknown>, limit = 100, offset = 0): Promise<Edge[]> {
     if (!this.drizzle) throw new Error('Database not initialized');
 
     const whereConditions = Object.entries(conditions).map(([key, value]) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const column = (schema.edges as any)[key];
       return eq(column, value);
     });
@@ -305,7 +308,8 @@ export class SQLiteAdapter extends BaseAdapter {
     const query = nodeId ? `DELETE FROM kg_node_indices WHERE index_key = ? AND node_id = ?` : `DELETE FROM kg_node_indices WHERE index_key = ?`;
     const params = nodeId ? [indexKey, nodeId] : [indexKey];
 
-    const stmt = this.db!.prepare(query);
+    if (!this.db) throw new Error('Database not initialized');
+    const stmt = this.db.prepare(query);
     const info = stmt.run(params);
     return info.changes;
   }
@@ -329,7 +333,8 @@ export class SQLiteAdapter extends BaseAdapter {
     const query = edgeId ? `DELETE FROM kg_edge_indices WHERE index_key = ? AND edge_id = ?` : `DELETE FROM kg_edge_indices WHERE index_key = ?`;
     const params = edgeId ? [indexKey, edgeId] : [indexKey];
 
-    const stmt = this.db!.prepare(query);
+    if (!this.db) throw new Error('Database not initialized');
+    const stmt = this.db.prepare(query);
     const info = stmt.run(params);
     return info.changes;
   }
@@ -352,7 +357,8 @@ export class SQLiteAdapter extends BaseAdapter {
 
   async deleteSearchIndex(nodeId: string): Promise<number> {
     const query = `DELETE FROM kg_search_index WHERE node_id = ?`;
-    const stmt = this.db!.prepare(query);
+    if (!this.db) throw new Error('Database not initialized');
+    const stmt = this.db.prepare(query);
     const info = stmt.run([nodeId]);
     return info.changes;
   }
@@ -387,7 +393,8 @@ export class SQLiteAdapter extends BaseAdapter {
 
     const placeholders = ids.map(() => '?').join(',');
     const query = `DELETE FROM kg_nodes WHERE id IN (${placeholders})`;
-    const stmt = this.db!.prepare(query);
+    if (!this.db) throw new Error('Database not initialized');
+    const stmt = this.db.prepare(query);
     const info = stmt.run(ids);
     return info.changes;
   }
@@ -397,7 +404,8 @@ export class SQLiteAdapter extends BaseAdapter {
 
     const placeholders = ids.map(() => '?').join(',');
     const query = `DELETE FROM kg_edges WHERE id IN (${placeholders})`;
-    const stmt = this.db!.prepare(query);
+    if (!this.db) throw new Error('Database not initialized');
+    const stmt = this.db.prepare(query);
     const info = stmt.run(ids);
     return info.changes;
   }
@@ -413,9 +421,9 @@ export class SQLiteAdapter extends BaseAdapter {
   async getStats(): Promise<DatabaseStats> {
     if (!this.db) throw new Error('Database not initialized');
 
-    const nodeCount = this.db.prepare('SELECT COUNT(*) as count FROM kg_nodes').get() as any;
-    const edgeCount = this.db.prepare('SELECT COUNT(*) as count FROM kg_edges').get() as any;
-    const indexCount = this.db.prepare('SELECT COUNT(*) as count FROM kg_node_indices').get() as any;
+    const nodeCount = this.db.prepare('SELECT COUNT(*) as count FROM kg_nodes').get() as {count: number};
+    const edgeCount = this.db.prepare('SELECT COUNT(*) as count FROM kg_edges').get() as {count: number};
+    const indexCount = this.db.prepare('SELECT COUNT(*) as count FROM kg_node_indices').get() as {count: number};
 
     return {
       nodeCount: nodeCount.count,

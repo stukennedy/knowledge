@@ -2,13 +2,14 @@ import { BaseGraphVisualizer } from './base';
 import type { GraphSnapshot, VisualizationEvents } from './types';
 
 // Dynamic import for three.js to support optional dependency
-let THREE: any;
+let THREE: unknown;
 let threeAvailable = false;
 
 try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
   THREE = require('three');
   threeAvailable = true;
-} catch (e) {
+} catch {
   // three.js is not available - will throw error when class is instantiated
 }
 

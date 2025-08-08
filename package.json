@@ -1,6 +1,6 @@
 {
   "name": "@fluxgraph/knowledge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "A flexible, database-agnostic knowledge graph implementation for TypeScript",
   "main": "dist/index.js",

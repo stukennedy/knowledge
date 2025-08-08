@@ -182,6 +182,17 @@ export interface VisualizerFactoryOptions {
 }
 
 /**
+ * Visualization Registry interface
+ */
+export interface VisualizationRegistry {
+  visualizers: Map<string, any>;
+  register(name: string, visualizer: any): void;
+  get(name: string): any | undefined;
+  list(): string[];
+  getAvailableBackends(): string[];
+}
+
+/**
  * Snapshot creation options
  */
 export interface SnapshotOptions {

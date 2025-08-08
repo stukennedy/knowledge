@@ -1,6 +1,13 @@
-import * as d3 from 'd3';
 import { BaseGraphVisualizer } from './base';
 import type { GraphSnapshot, VisualNode, VisualEdge, VisualizationEvents } from './types';
+
+// Dynamic import for d3 to support optional dependency
+let d3: any;
+try {
+  d3 = require('d3');
+} catch (e) {
+  // D3 is not available - will throw error when class is instantiated
+}
 
 /**
  * D3.js implementation of graph visualizer
@@ -14,13 +21,16 @@ import type { GraphSnapshot, VisualNode, VisualEdge, VisualizationEvents } from 
  * - Export to SVG/PNG
  */
 export class D3GraphVisualizer extends BaseGraphVisualizer {
-  private svg: d3.Selection<SVGSVGElement, unknown, null, undefined> | null = null;
-  private g: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
-  private simulation: d3.Simulation<any, any> | null = null;
-  private zoom: d3.ZoomBehavior<SVGSVGElement, unknown> | null = null;
-  private tooltip: d3.Selection<HTMLDivElement, unknown, null, undefined> | null = null;
+  private svg: any | null = null;
+  private g: any | null = null;
+  private simulation: any | null = null;
+  private zoom: any | null = null;
+  private tooltip: any | null = null;
 
   protected async initializeBackend(): Promise<void> {
+    if (!d3) {
+      throw new Error('D3.js is not installed. Please install it with: npm install d3 --save-optional');
+    }
     if (!this.container) return;
 
     // Create SVG container
@@ -31,9 +41,9 @@ export class D3GraphVisualizer extends BaseGraphVisualizer {
 
     // Setup zoom behavior
     this.zoom = d3
-      .zoom<SVGSVGElement, unknown>()
+      .zoom()
       .scaleExtent([0.1, 4])
-      .on('zoom', (event) => {
+      .on('zoom', (event: any) => {
         if (this.g) {
           this.g.attr('transform', event.transform);
         }
@@ -63,7 +73,7 @@ export class D3GraphVisualizer extends BaseGraphVisualizer {
 
     // Add canvas click handler
     if (this.svg && this.events.onCanvasClick) {
-      this.svg.on('click', (event) => {
+      this.svg.on('click', (event: any) => {
         if (event.target === this.svg?.node()) {
           this.events.onCanvasClick!(event);
         }
@@ -108,24 +118,24 @@ export class D3GraphVisualizer extends BaseGraphVisualizer {
       .data(snapshot.edges)
       .enter()
       .append('line')
-      .attr('stroke', (d) => d.color || this.options.defaultEdgeColor || '#999999')
-      .attr('stroke-width', (d) => d.width || this.options.defaultEdgeWidth || 2)
-      .attr('stroke-opacity', (d) => d.opacity || 0.6)
+      .attr('stroke', (d: any) => d.color || this.options.defaultEdgeColor || '#999999')
+      .attr('stroke-width', (d: any) => d.width || this.options.defaultEdgeWidth || 2)
+      .attr('stroke-opacity', (d: any) => d.opacity || 0.6)
       .attr('marker-end', 'url(#arrow)')
       .style('cursor', 'pointer')
-      .on('click', (event, d) => {
+      .on('click', (event: any, d: any) => {
         if (this.events.onEdgeClick) {
           this.events.onEdgeClick(d, event);
         }
       })
-      .on('mouseover', (event, d) => {
+      .on('mouseover', (event: any, d: any) => {
         d3.select(event.target).attr('stroke-width', ((d as any).width || 2) * 2);
         if (this.events.onEdgeHover) {
           this.events.onEdgeHover(d, event);
         }
         this.showTooltip(event, this.createEdgeTooltip(d));
       })
-      .on('mouseout', (event, d) => {
+      .on('mouseout', (event: any, d: any) => {
         d3.select(event.target).attr('stroke-width', (d as any).width || 2);
         this.hideTooltip();
       });
@@ -145,16 +155,16 @@ export class D3GraphVisualizer extends BaseGraphVisualizer {
     // Add node circles
     nodes
       .append('circle')
-      .attr('r', (d) => d.size || this.options.defaultNodeSize || 15)
-      .attr('fill', (d) => d.color || this.options.defaultNodeColor || '#666666')
-      .attr('stroke', (d) => d.borderColor || '#ffffff')
-      .attr('stroke-width', (d) => d.borderWidth || 2)
-      .attr('opacity', (d) => d.opacity || 1);
+      .attr('r', (d: any) => d.size || this.options.defaultNodeSize || 15)
+      .attr('fill', (d: any) => d.color || this.options.defaultNodeColor || '#666666')
+      .attr('stroke', (d: any) => d.borderColor || '#ffffff')
+      .attr('stroke-width', (d: any) => d.borderWidth || 2)
+      .attr('opacity', (d: any) => d.opacity || 1);
 
     // Add node labels
     nodes
       .append('text')
-      .text((d) => d.label)
+      .text((d: any) => d.label)
       .attr('text-anchor', 'middle')
       .attr('dy', '0.35em')
       .attr('font-size', '12px')
@@ -164,12 +174,12 @@ export class D3GraphVisualizer extends BaseGraphVisualizer {
 
     // Add event handlers to nodes
     nodes
-      .on('click', (event, d) => {
+      .on('click', (event: any, d: any) => {
         if (this.events.onNodeClick) {
           this.events.onNodeClick(d, event);
         }
       })
-      .on('mouseover', (event, d) => {
+      .on('mouseover', (event: any, d: any) => {
         d3.select(event.currentTarget)
           .select('circle')
           .attr('r', (d.size || 15) * 1.2);
@@ -178,7 +188,7 @@ export class D3GraphVisualizer extends BaseGraphVisualizer {
         }
         this.showTooltip(event, this.createNodeTooltip(d));
       })
-      .on('mouseout', (event, d) => {
+      .on('mouseout', (event: any, d: any) => {
         d3.select(event.currentTarget)
           .select('circle')
           .attr('r', d.size || 15);
@@ -373,10 +383,10 @@ export class D3GraphVisualizer extends BaseGraphVisualizer {
       .attr('fill', '#999999');
   }
 
-  private dragBehavior(): d3.DragBehavior<SVGGElement, any, any> {
+  private dragBehavior(): any {
     return d3
-      .drag<SVGGElement, any>()
-      .on('start', (event, d: any) => {
+      .drag()
+      .on('start', (event: any, d: any) => {
         if (!this.simulation) return;
         if (!event.active) this.simulation.alphaTarget(0.3).restart();
         d.fx = d.x;
@@ -385,14 +395,14 @@ export class D3GraphVisualizer extends BaseGraphVisualizer {
           this.events.onNodeDrag(d, event);
         }
       })
-      .on('drag', (event, d: any) => {
+      .on('drag', (event: any, d: any) => {
         d.fx = event.x;
         d.fy = event.y;
         if (this.events.onNodeDrag) {
           this.events.onNodeDrag(d, event);
         }
       })
-      .on('end', (event, d: any) => {
+      .on('end', (event: any, d: any) => {
         if (!this.simulation) return;
         if (!event.active) this.simulation.alphaTarget(0);
         d.fx = null;

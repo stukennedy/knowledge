@@ -1,7 +1,20 @@
-import { Network, type Options } from 'vis-network';
-import { DataSet } from 'vis-data/esnext';
 import { BaseGraphVisualizer } from './base';
 import type { GraphSnapshot, VisualizationEvents, VisualNode, VisualEdge } from './types';
+
+// Dynamic imports for vis-network to support optional dependency
+let Network: any;
+let DataSet: any;
+let visNetworkAvailable = false;
+
+try {
+  const visNetwork = require('vis-network');
+  const visData = require('vis-data');
+  Network = visNetwork.Network;
+  DataSet = visData.DataSet;
+  visNetworkAvailable = true;
+} catch (e) {
+  // vis-network is not available - will throw error when class is instantiated
+}
 
 /**
  * vis-network implementation of graph visualizer
@@ -15,11 +28,14 @@ import type { GraphSnapshot, VisualizationEvents, VisualNode, VisualEdge } from 
  * - Touch support
  */
 export class VisNetworkGraphVisualizer extends BaseGraphVisualizer {
-  private network: Network | null = null;
-  private nodes: DataSet<any> | null = null;
-  private edges: DataSet<any> | null = null;
+  private network: any | null = null;
+  private nodes: any | null = null;
+  private edges: any | null = null;
 
   protected async initializeBackend(): Promise<void> {
+    if (!visNetworkAvailable) {
+      throw new Error('vis-network is not installed. Please install it with: npm install vis-network vis-data --save-optional');
+    }
     if (!this.container) return;
 
     // Create datasets
@@ -196,7 +212,7 @@ export class VisNetworkGraphVisualizer extends BaseGraphVisualizer {
     }
   }
 
-  private getVisOptions(): Options {
+  private getVisOptions(): any {
     const layoutOptions = this.getLayoutOptions();
 
     return {
@@ -354,7 +370,7 @@ export class VisNetworkGraphVisualizer extends BaseGraphVisualizer {
     if (!this.network) return;
 
     // Node events
-    this.network.on('click', (params) => {
+    this.network.on('click', (params: any) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0];
         const node = this.nodes?.get(nodeId);
@@ -374,7 +390,7 @@ export class VisNetworkGraphVisualizer extends BaseGraphVisualizer {
       }
     });
 
-    this.network.on('hoverNode', (params) => {
+    this.network.on('hoverNode', (params: any) => {
       const node = this.nodes?.get(params.node);
       if (node && this.events.onNodeHover) {
         this.events.onNodeHover((node as any).originalData, params);
@@ -386,7 +402,7 @@ export class VisNetworkGraphVisualizer extends BaseGraphVisualizer {
     });
 
     // Edge events
-    this.network.on('hoverEdge', (params) => {
+    this.network.on('hoverEdge', (params: any) => {
       const edge = this.edges?.get(params.edge);
       if (edge && this.events.onEdgeHover) {
         this.events.onEdgeHover((edge as any).originalData, params);
@@ -394,14 +410,14 @@ export class VisNetworkGraphVisualizer extends BaseGraphVisualizer {
     });
 
     // Zoom events
-    this.network.on('zoom', (params) => {
+    this.network.on('zoom', (params: any) => {
       if (this.events.onZoom) {
         this.events.onZoom(params.scale, params);
       }
     });
 
     // Drag events
-    this.network.on('dragStart', (params) => {
+    this.network.on('dragStart', (params: any) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0];
         const node = this.nodes?.get(nodeId);
@@ -411,7 +427,7 @@ export class VisNetworkGraphVisualizer extends BaseGraphVisualizer {
       }
     });
 
-    this.network.on('dragEnd', (params) => {
+    this.network.on('dragEnd', (params: any) => {
       if (params.nodes.length > 0) {
         const nodeId = params.nodes[0];
         const node = this.nodes?.get(nodeId);

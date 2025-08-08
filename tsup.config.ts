@@ -18,5 +18,17 @@ export default defineConfig({
       js: format === 'esm' ? '.mjs' : '.js',
     };
   },
-  external: ['@cloudflare/workers-types', '@libsql/client', 'better-sqlite3', 'bun:sqlite', './bun-sqlite'],
+  external: [
+    '@cloudflare/workers-types', 
+    '@libsql/client', 
+    'better-sqlite3', 
+    'bun:sqlite', 
+    './bun-sqlite',
+    'd3',
+    'cytoscape',
+    'three',
+    'vis-network',
+    'vis-data',
+    'vis-util'
+  ],
 });

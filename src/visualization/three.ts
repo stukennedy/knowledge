@@ -1,6 +1,16 @@
-import * as THREE from 'three';
 import { BaseGraphVisualizer } from './base';
 import type { GraphSnapshot, VisualizationEvents } from './types';
+
+// Dynamic import for three.js to support optional dependency
+let THREE: any;
+let threeAvailable = false;
+
+try {
+  THREE = require('three');
+  threeAvailable = true;
+} catch (e) {
+  // three.js is not available - will throw error when class is instantiated
+}
 
 /**
  * Three.js implementation of graph visualizer (3D)
@@ -13,17 +23,20 @@ import type { GraphSnapshot, VisualizationEvents } from './types';
  * - Export capabilities
  */
 export class ThreeGraphVisualizer extends BaseGraphVisualizer {
-  private scene: THREE.Scene | null = null;
-  private camera: THREE.PerspectiveCamera | null = null;
-  private renderer: THREE.WebGLRenderer | null = null;
+  private scene: any | null = null;
+  private camera: any | null = null;
+  private renderer: any | null = null;
   private controls: any = null; // OrbitControls
-  private nodeMeshes: Map<string, THREE.Mesh> = new Map();
-  private edgeLines: Map<string, THREE.Line> = new Map();
-  private raycaster: THREE.Raycaster | null = null;
-  private mouse: THREE.Vector2 | null = null;
+  private nodeMeshes: Map<string, any> = new Map();
+  private edgeLines: Map<string, any> = new Map();
+  private raycaster: any | null = null;
+  private mouse: any | null = null;
   private animationId: number | null = null;
 
   protected async initializeBackend(): Promise<void> {
+    if (!threeAvailable) {
+      throw new Error('Three.js is not installed. Please install it with: npm install three --save-optional');
+    }
     if (!this.container) return;
 
     // Create scene
@@ -270,7 +283,7 @@ export class ThreeGraphVisualizer extends BaseGraphVisualizer {
     this.createNodeLabel(node, mesh);
   }
 
-  private createNodeLabel(node: any, mesh: THREE.Mesh): void {
+  private createNodeLabel(node: any, mesh: any): void {
     if (!this.scene) return;
 
     const canvas = document.createElement('canvas');

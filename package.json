@@ -1,6 +1,6 @@
 {
   "name": "@fluxgraph/knowledge",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "type": "module",
   "description": "A flexible, database-agnostic knowledge graph implementation for TypeScript",
   "main": "dist/index.js",
@@ -60,12 +60,7 @@
   "author": "Stu Kennedy",
   "license": "MIT",
   "dependencies": {
-    "cytoscape": "^3.33.0",
-    "d3": "^7.9.0",
-    "drizzle-orm": "^0.44.4",
-    "three": "^0.169.0",
-    "vis-data": "^8.0.1",
-    "vis-network": "^10.0.1"
+    "drizzle-orm": "^0.44.4"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250807.0",

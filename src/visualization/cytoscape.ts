@@ -1,6 +1,19 @@
-import cytoscape, { Core, LayoutOptions } from 'cytoscape';
 import { BaseGraphVisualizer } from './base';
 import type { GraphSnapshot, VisualizationEvents } from './types';
+
+// Dynamic import for cytoscape to support optional dependency
+let cytoscape: any;
+let cytoscapeAvailable = false;
+
+try {
+  cytoscape = require('cytoscape');
+  cytoscapeAvailable = true;
+} catch (e) {
+  // cytoscape is not available - will throw error when class is instantiated
+}
+
+type Core = any;
+type LayoutOptions = any;
 
 /**
  * Cytoscape.js implementation of graph visualizer
@@ -17,6 +30,9 @@ export class CytoscapeGraphVisualizer extends BaseGraphVisualizer {
   private cy: Core | null = null;
 
   protected async initializeBackend(): Promise<void> {
+    if (!cytoscapeAvailable) {
+      throw new Error('Cytoscape is not installed. Please install it with: npm install cytoscape --save-optional');
+    }
     if (!this.container) return;
 
     // Create cytoscape instance
@@ -168,7 +184,7 @@ export class CytoscapeGraphVisualizer extends BaseGraphVisualizer {
     this.cy.elements().unselect();
 
     // Select specified nodes
-    const nodes = this.cy.elements().filter((node) => nodeIds.includes(node.id()));
+    const nodes = this.cy.elements().filter((node: any) => nodeIds.includes(node.id()));
     nodes.select();
   }
 
@@ -397,7 +413,7 @@ export class CytoscapeGraphVisualizer extends BaseGraphVisualizer {
     if (!this.cy) return;
 
     // Node events
-    this.cy.on('tap', 'node', (event) => {
+    this.cy.on('tap', 'node', (event: any) => {
       const node = event.target;
       const originalData = node.data('originalData');
       if (originalData && this.events.onNodeClick) {
@@ -405,7 +421,7 @@ export class CytoscapeGraphVisualizer extends BaseGraphVisualizer {
       }
     });
 
-    this.cy.on('mouseover', 'node', (event) => {
+    this.cy.on('mouseover', 'node', (event: any) => {
       const node = event.target;
       const originalData = node.data('originalData');
       if (originalData && this.events.onNodeHover) {
@@ -414,7 +430,7 @@ export class CytoscapeGraphVisualizer extends BaseGraphVisualizer {
     });
 
     // Edge events
-    this.cy.on('tap', 'edge', (event) => {
+    this.cy.on('tap', 'edge', (event: any) => {
       const edge = event.target;
       const originalData = edge.data('originalData');
       if (originalData && this.events.onEdgeClick) {
@@ -422,7 +438,7 @@ export class CytoscapeGraphVisualizer extends BaseGraphVisualizer {
       }
     });
 
-    this.cy.on('mouseover', 'edge', (event) => {
+    this.cy.on('mouseover', 'edge', (event: any) => {
       const edge = event.target;
       const originalData = edge.data('originalData');
       if (originalData && this.events.onEdgeHover) {
@@ -431,7 +447,7 @@ export class CytoscapeGraphVisualizer extends BaseGraphVisualizer {
     });
 
     // Canvas events
-    this.cy.on('tap', (event) => {
+    this.cy.on('tap', (event: any) => {
       if (event.target === this.cy) {
         if (this.events.onCanvasClick) {
           this.events.onCanvasClick(event);
@@ -440,14 +456,14 @@ export class CytoscapeGraphVisualizer extends BaseGraphVisualizer {
     });
 
     // Zoom events
-    this.cy.on('zoom', (event) => {
+    this.cy.on('zoom', (event: any) => {
       if (this.events.onZoom) {
         this.events.onZoom(this.cy!.zoom(), event);
       }
     });
 
     // Pan events
-    this.cy.on('pan', (event) => {
+    this.cy.on('pan', (event: any) => {
       if (this.events.onPan) {
         const pan = this.cy!.pan();
         this.events.onPan(pan.x, pan.y, event);
@@ -455,7 +471,7 @@ export class CytoscapeGraphVisualizer extends BaseGraphVisualizer {
     });
 
     // Drag events
-    this.cy.on('drag', 'node', (event) => {
+    this.cy.on('drag', 'node', (event: any) => {
       const node = event.target;
       const originalData = node.data('originalData');
       if (originalData && this.events.onNodeDrag) {

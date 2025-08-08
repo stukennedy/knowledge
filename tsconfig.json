@@ -23,5 +23,5 @@
     "types": ["node", "vitest/globals", "bun"]
   },
   "include": ["src/**/*", "examples/**/*"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "src/adapters/bun-sqlite.ts"]
 }

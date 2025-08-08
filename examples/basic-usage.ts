@@ -2,7 +2,7 @@ import { createKnowledgeGraph, CommonEdgeType, KnowledgeExtractor } from '../src
 
 async function main() {
   // Create a knowledge graph with SQLite backend
-  const graph = createKnowledgeGraph('sqlite', {
+  const graph = await createKnowledgeGraph('sqlite', {
     connection: './knowledge.db', // Use ':memory:' for in-memory database
     debug: true,
   });

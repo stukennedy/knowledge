@@ -1,4 +1,4 @@
-import { createKnowledgeGraph, KnowledgeExtractor, CommonEdgeType } from '../src';
+import { createKnowledgeGraph, KnowledgeExtractor } from '../src';
 
 // User-defined node types
 enum MyNodeType {
@@ -17,7 +17,7 @@ enum MyEdgeType {
 }
 
 async function main() {
-  const graph = createKnowledgeGraph<MyNodeType>('sqlite', {
+  const graph = await createKnowledgeGraph<MyNodeType>('sqlite', {
     connection: ':memory:',
   });
 
@@ -70,7 +70,7 @@ async function main() {
   extractor.addRelationshipPattern({
     pattern: /(\b[A-Z][a-z]+ [A-Z][a-z]+\b).*?(?:works for|employed by|at)\s+(\b[A-Z][a-z]+(?: Inc| Corp| LLC| Ltd)\b)/gi,
     type: MyEdgeType.WORKS_FOR,
-    extractor: (match, nodes) => {
+    extractor: (match, _nodes) => {
       const personName = match[1];
       const companyName = match[2];
 
@@ -90,7 +90,7 @@ async function main() {
   extractor.addRelationshipPattern({
     pattern: /(\b[A-Z][a-z]+(?: Inc| Corp| LLC| Ltd)\b).*?(?:uses|implements|adopts)\s+(\b(?:React|Angular|Vue|Node\.js|Python|Java|TypeScript)\b)/gi,
     type: MyEdgeType.USES_TECH,
-    extractor: (match, nodes) => {
+    extractor: (match, _nodes) => {
       const companyName = match[1];
       const technology = match[2];
 

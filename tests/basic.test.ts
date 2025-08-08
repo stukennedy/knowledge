@@ -6,7 +6,7 @@ describe('KnowledgeGraph Basic Tests', () => {
   let graph: KnowledgeGraph;
 
   beforeEach(async () => {
-    graph = createKnowledgeGraph('sqlite', { connection: ':memory:' });
+    graph = await createKnowledgeGraph('sqlite', { connection: ':memory:' });
     await graph.initialize();
   });
 

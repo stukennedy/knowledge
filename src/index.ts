@@ -22,7 +22,7 @@ export * as schema from './schema';
 import { KnowledgeGraph } from './core/KnowledgeGraph';
 import { createAdapter } from './adapters';
 
-export function createKnowledgeGraph<TNodeType extends string = string>(adapterType: 'sqlite' | 'd1' | 'libsql', config?: any): KnowledgeGraph<TNodeType> {
-  const adapter = createAdapter(adapterType, config);
+export async function createKnowledgeGraph<TNodeType extends string = string>(adapterType: 'sqlite' | 'd1' | 'libsql', config?: any): Promise<KnowledgeGraph<TNodeType>> {
+  const adapter = await createAdapter(adapterType, config);
   return new KnowledgeGraph<TNodeType>(adapter);
 }

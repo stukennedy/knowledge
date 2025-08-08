@@ -19,7 +19,7 @@ let graph: KnowledgeGraph | null = null;
 let vizManager: GraphVisualizationManager | null = null;
 
 async function initializeGraph() {
-  graph = createKnowledgeGraph('sqlite', {
+  graph = await createKnowledgeGraph('sqlite', {
     connection: ':memory:',
     debug: false,
   });

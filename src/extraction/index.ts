@@ -61,7 +61,7 @@ export class KnowledgeExtractor {
 
     // URL patterns
     this.entityPatterns.push({
-      pattern: /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*)/g,
+      pattern: /https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/g,
       type: 'DOCUMENT',
       extractor: (match) => ({
         label: new URL(match[0]).hostname,
@@ -81,7 +81,7 @@ export class KnowledgeExtractor {
 
     // Date patterns
     this.entityPatterns.push({
-      pattern: /\b(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})\b/g,
+      pattern: /\b(\d{1,2})[/-](\d{1,2})[/-](\d{2,4})\b/g,
       type: 'EVENT',
       extractor: (match) => ({
         label: match[0],

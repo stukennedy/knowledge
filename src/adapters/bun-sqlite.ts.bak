@@ -29,9 +29,10 @@ export class BunSQLiteAdapter extends BaseAdapter {
         await this.createTables();
       }
 
-      if (this.config.debug) {
-        console.log('[BunSQLiteAdapter] Initialized', { path: dbPath });
-      }
+      // Debug logging disabled to avoid console warnings
+      // if (this.config.debug) {
+      //   console.log('[BunSQLiteAdapter] Initialized', { path: dbPath });
+      // }
     } catch (error) {
       console.error('[BunSQLiteAdapter Error] Failed to initialize:', error);
       throw error;

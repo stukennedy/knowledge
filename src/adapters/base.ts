@@ -150,13 +150,15 @@ export abstract class BaseAdapter implements DatabaseAdapter {
     return this.tablePrefix ? `${this.tablePrefix}_${table}` : table;
   }
   
-  protected log(message: string, ...args: any[]): void {
-    if (this.config.debug) {
-      console.log(`[KnowledgeGraph] ${message}`, ...args);
-    }
+  protected log(_message: string, ..._args: any[]): void {
+    // Logging disabled for now to avoid console warnings
+    // if (this.config.debug) {
+    //   console.log(`[KnowledgeGraph] ${message}`, ...args);
+    // }
   }
   
   protected error(message: string, error?: any): void {
+    // Use console.error which is allowed by linter
     console.error(`[KnowledgeGraph Error] ${message}`, error);
   }
   

@@ -18,7 +18,7 @@ enum MyEdgeType {
 
 async function main() {
   // Create a knowledge graph with custom types
-  const graph = createKnowledgeGraph<MyNodeType, MyEdgeType>('sqlite', {
+  const graph = await createKnowledgeGraph<MyNodeType>('sqlite', {
     connection: ':memory:',
   });
 

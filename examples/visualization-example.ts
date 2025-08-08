@@ -14,7 +14,7 @@ async function main() {
   console.log('🚀 Knowledge Graph Visualization Example\n');
 
   // Create a knowledge graph
-  const graph = createKnowledgeGraph('sqlite', {
+  const graph = await createKnowledgeGraph('sqlite', {
     connection: ':memory:', // Use in-memory database for this example
     debug: true,
   });

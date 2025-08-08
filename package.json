@@ -1,0 +1,106 @@
+{
+  "name": "@fluxgraph/knowledge",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "A flexible, database-agnostic knowledge graph implementation for TypeScript",
+  "main": "dist/index.js",
+  "module": "dist/index.mjs",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./adapters": {
+      "import": "./dist/adapters/index.mjs",
+      "require": "./dist/adapters/index.js",
+      "types": "./dist/adapters/index.d.ts"
+    },
+    "./algorithms": {
+      "import": "./dist/algorithms/index.mjs",
+      "require": "./dist/algorithms/index.js",
+      "types": "./dist/algorithms/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run lint && npm run test && npm run build"
+  },
+  "keywords": [
+    "knowledge-graph",
+    "graph-database",
+    "graph",
+    "drizzle",
+    "cloudflare-d1",
+    "sqlite",
+    "typescript",
+    "knowledge-base",
+    "semantic-network",
+    "entity-relationship"
+  ],
+  "author": "Stu Kennedy",
+  "license": "MIT",
+  "dependencies": {
+    "drizzle-orm": "^0.44.4"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250807.0",
+    "@libsql/client": "^0.15.10",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20.19.9",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "@vitest/coverage-v8": "^1.6.1",
+    "better-sqlite3": "^12.2.0",
+    "drizzle-kit": "^0.31.4",
+    "eslint": "^9.32.0",
+    "prettier": "^3.6.2",
+    "tsup": "^8.4.1",
+    "typescript": "^5.9.2",
+    "vitest": "^1.6.1"
+  },
+  "peerDependencies": {
+    "@cloudflare/workers-types": "*",
+    "@libsql/client": "*",
+    "better-sqlite3": "*"
+  },
+  "peerDependenciesMeta": {
+    "@cloudflare/workers-types": {
+      "optional": true
+    },
+    "@libsql/client": {
+      "optional": true
+    },
+    "better-sqlite3": {
+      "optional": true
+    }
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/fluxgraph/knowledge"
+  },
+  "bugs": {
+    "url": "https://github.com/fluxgraph/knowledge/issues"
+  },
+  "homepage": "https://github.com/fluxgraph/knowledge#readme",
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -13,5 +13,10 @@ export default defineConfig({
   clean: true,
   minify: false,
   target: 'es2022',
+  outExtension({ format }) {
+    return {
+      js: format === 'esm' ? '.mjs' : '.js',
+    };
+  },
   external: ['@cloudflare/workers-types', '@libsql/client', 'better-sqlite3', 'bun:sqlite', './bun-sqlite'],
 });

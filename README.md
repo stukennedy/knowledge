@@ -8,6 +8,7 @@ A flexible, database-agnostic knowledge graph implementation for TypeScript. Bui
 - 🔍 **Full-Text Search** - Built-in search indexing and querying
 - 🧠 **Knowledge Extraction** - Extract entities and relationships from text
 - 📊 **Graph Algorithms** - Path finding, centrality, community detection
+- 🎨 **Interactive Visualizations** - D3.js, vis-network, Cytoscape.js, and Three.js backends
 - 🚀 **High Performance** - Optimized queries with proper indexing
 - 🔒 **Type Safe** - Full TypeScript support with generics
 - 💾 **Transaction Support** - Atomic operations for data consistency
@@ -35,7 +36,7 @@ import { createKnowledgeGraph, NodeType, EdgeType } from '@fluxgraph/knowledge';
 
 // Create a knowledge graph with SQLite
 const graph = createKnowledgeGraph('sqlite', {
-  connection: './my-knowledge.db' // or ':memory:' for in-memory
+  connection: './my-knowledge.db', // or ':memory:' for in-memory
 });
 
 await graph.initialize();
@@ -46,16 +47,16 @@ const person = await graph.addNode({
   label: 'Alice Johnson',
   properties: {
     email: 'alice@example.com',
-    age: 28
-  }
+    age: 28,
+  },
 });
 
 const company = await graph.addNode({
   type: NodeType.ORGANIZATION,
   label: 'TechCorp',
   properties: {
-    industry: 'Technology'
-  }
+    industry: 'Technology',
+  },
 });
 
 // Create relationships
@@ -64,21 +65,39 @@ await graph.addEdge({
   fromNodeId: person.id,
   toNodeId: company.id,
   properties: {
-    since: '2020-01-15'
-  }
+    since: '2020-01-15',
+  },
 });
 
 // Query the graph
 const colleagues = await graph.queryRelated(person.id, {
   depth: 2,
-  edgeTypes: [EdgeType.COLLEAGUE_OF]
+  edgeTypes: [EdgeType.COLLEAGUE_OF],
 });
 
 // Search
 const results = await graph.search({
   query: 'alice tech',
-  limit: 10
+  limit: 10,
 });
+
+// Visualize the graph
+import { GraphVisualizationManager } from '@fluxgraph/knowledge';
+
+const vizManager = new GraphVisualizationManager(graph);
+const container = document.getElementById('graph-container');
+
+await vizManager.initializeVisualization('d3', container, {
+  visualization: {
+    layout: 'force',
+    nodeColors: {
+      PERSON: '#4CAF50',
+      ORGANIZATION: '#2196F3',
+    },
+  },
+});
+
+await vizManager.visualizeNode(person.id, 2);
 ```
 
 ## Database Adapters
@@ -90,7 +109,7 @@ import { createKnowledgeGraph } from '@fluxgraph/knowledge';
 
 const graph = createKnowledgeGraph('sqlite', {
   connection: './database.db',
-  debug: true
+  debug: true,
 });
 ```
 
@@ -104,10 +123,10 @@ export default {
     const adapter = new D1Adapter({ database: env.DB });
     const graph = new KnowledgeGraph(adapter);
     await graph.initialize();
-    
+
     // Use the graph...
-  }
-}
+  },
+};
 ```
 
 ### Custom Adapter
@@ -130,14 +149,15 @@ Nodes represent entities in your knowledge graph:
 
 ```typescript
 const node = await graph.addNode({
-  type: NodeType.PERSON,        // or custom string
-  label: 'Unique Label',         // Human-readable identifier
-  properties: {                  // Custom properties
+  type: NodeType.PERSON, // or custom string
+  label: 'Unique Label', // Human-readable identifier
+  properties: {
+    // Custom properties
     key: 'value',
-    nested: { data: true }
+    nested: { data: true },
   },
-  confidence: 0.95,              // Confidence score (0-1)
-  sourceSessionId: 'session-123' // Track data source
+  confidence: 0.95, // Confidence score (0-1)
+  sourceSessionId: 'session-123', // Track data source
 });
 ```
 
@@ -152,20 +172,22 @@ const edge = await graph.addEdge({
   toNodeId: node2.id,
   properties: {
     since: '2020',
-    strength: 'strong'
+    strength: 'strong',
   },
-  bidirectional: true  // Creates edges in both directions
+  bidirectional: true, // Creates edges in both directions
 });
 ```
 
 ### Standard Types
 
 Built-in node types:
+
 - `PERSON`, `ORGANIZATION`, `LOCATION`, `EVENT`
 - `DOCUMENT`, `CONCEPT`, `TOPIC`, `SKILL`
 - `PRODUCT`, `SERVICE`, `FINANCIAL`, `GOAL`
 
 Built-in edge types:
+
 - Relationships: `KNOWS`, `FRIEND_OF`, `COLLEAGUE_OF`
 - Family: `PARENT_OF`, `CHILD_OF`, `SIBLING_OF`
 - Work: `EMPLOYED_BY`, `MANAGES`, `REPORTS_TO`
@@ -180,7 +202,7 @@ Built-in edge types:
 const documents = await graph.queryByType(NodeType.DOCUMENT, {
   limit: 50,
   offset: 0,
-  minConfidence: 0.7
+  minConfidence: 0.7,
 });
 ```
 
@@ -188,10 +210,10 @@ const documents = await graph.queryByType(NodeType.DOCUMENT, {
 
 ```typescript
 const network = await graph.queryRelated(nodeId, {
-  depth: 3,                    // Traversal depth
-  direction: 'both',           // 'in', 'out', or 'both'
+  depth: 3, // Traversal depth
+  direction: 'both', // 'in', 'out', or 'both'
   edgeTypes: [EdgeType.KNOWS], // Filter by edge types
-  includeEdges: true           // Include edges in result
+  includeEdges: true, // Include edges in result
 });
 ```
 
@@ -200,7 +222,7 @@ const network = await graph.queryRelated(nodeId, {
 ```typescript
 // Shortest path
 const path = await graph.findShortestPath(fromId, toId, {
-  edgeTypes: [EdgeType.KNOWS, EdgeType.COLLEAGUE_OF]
+  edgeTypes: [EdgeType.KNOWS, EdgeType.COLLEAGUE_OF],
 });
 
 // All paths (with graph algorithms)
@@ -218,7 +240,7 @@ const results = await graph.search({
   nodeTypes: [NodeType.DOCUMENT, NodeType.SKILL],
   fuzzy: true,
   limit: 20,
-  minScore: 0.5
+  minScore: 0.5,
 });
 ```
 
@@ -232,25 +254,19 @@ import { KnowledgeExtractor } from '@fluxgraph/knowledge/extraction';
 const extractor = new KnowledgeExtractor(graph);
 
 // Extract from text
-const extraction = await extractor.extractFromText(
-  'Alice Johnson (alice@example.com) works at TechCorp in San Francisco.',
-  {
-    extractEntities: true,
-    extractRelationships: true,
-    minConfidence: 0.6
-  }
-);
+const extraction = await extractor.extractFromText('Alice Johnson (alice@example.com) works at TechCorp in San Francisco.', {
+  extractEntities: true,
+  extractRelationships: true,
+  minConfidence: 0.6,
+});
 
 // Process and add to graph
-const { nodesAdded, edgesAdded } = await extractor.processExtractedKnowledge(
-  extraction,
-  { mergeStrategy: 'merge' }
-);
+const { nodesAdded, edgesAdded } = await extractor.processExtractedKnowledge(extraction, { mergeStrategy: 'merge' });
 
 // Extract from conversation
 const messages = [
   { role: 'user', content: 'I work with Bob on the AI project' },
-  { role: 'assistant', content: 'Tell me more about the AI project' }
+  { role: 'assistant', content: 'Tell me more about the AI project' },
 ];
 
 const conversationKnowledge = await extractor.extractFromConversation(messages);
@@ -265,11 +281,11 @@ extractor.addEntityPattern({
   type: NodeType.PROJECT,
   extractor: (match) => ({
     label: match[0],
-    properties: { 
+    properties: {
       projectId: match[0],
-      type: 'internal'
-    }
-  })
+      type: 'internal',
+    },
+  }),
 });
 
 // Add custom relationship pattern
@@ -279,8 +295,8 @@ extractor.addRelationshipPattern({
   extractor: (match, nodes) => ({
     fromNodeLabel: match[1],
     toNodeLabel: match[2],
-    properties: { extractedFrom: 'text' }
-  })
+    properties: { extractedFrom: 'text' },
+  }),
 });
 ```
 
@@ -311,6 +327,49 @@ const coefficient = await algorithms.clusteringCoefficient(nodeId);
 const components = await algorithms.findConnectedComponents();
 ```
 
+## Visualization
+
+Create beautiful, interactive visualizations of your knowledge graphs:
+
+```typescript
+import { GraphVisualizationManager } from '@fluxgraph/knowledge';
+
+const vizManager = new GraphVisualizationManager(graph);
+
+// Initialize with D3.js backend
+const container = document.getElementById('graph-container');
+await vizManager.initializeVisualization('d3', container, {
+  visualization: {
+    layout: 'force',
+    nodeColors: {
+      PERSON: '#4CAF50',
+      ORGANIZATION: '#2196F3',
+      LOCATION: '#FF9800',
+    },
+  },
+  events: {
+    onNodeClick: (node) => console.log('Clicked:', node.label),
+  },
+});
+
+// Visualize different parts of the graph
+await vizManager.visualizeNode('node-id', 2); // Node network
+await vizManager.visualizeSearch('engineer'); // Search results
+await vizManager.visualizeNodeTypes(['PERSON', 'ORGANIZATION']); // By type
+
+// Export as image
+const imageData = await vizManager.exportImage('png');
+```
+
+### Supported Backends
+
+- **D3.js**: Most customizable, best for small-medium graphs
+- **vis-network**: Excellent performance, good for large graphs
+- **Cytoscape.js**: Professional features, advanced analysis
+- **Three.js**: 3D visualization capabilities
+
+See [Visualization Documentation](./docs/visualization.md) for complete details.
+
 ## Batch Operations
 
 ```typescript
@@ -318,7 +377,7 @@ const components = await algorithms.findConnectedComponents();
 const result = await graph.batchAddNodes([
   { type: NodeType.PERSON, label: 'Person 1' },
   { type: NodeType.PERSON, label: 'Person 2' },
-  { type: NodeType.PERSON, label: 'Person 3' }
+  { type: NodeType.PERSON, label: 'Person 3' },
 ]);
 
 console.log(`Added ${result.successful} nodes, ${result.failed} failed`);
@@ -326,7 +385,7 @@ console.log(`Added ${result.successful} nodes, ${result.failed} failed`);
 // Batch add edges
 const edgeResult = await graph.batchAddEdges([
   { type: EdgeType.KNOWS, fromNodeId: id1, toNodeId: id2 },
-  { type: EdgeType.KNOWS, fromNodeId: id2, toNodeId: id3 }
+  { type: EdgeType.KNOWS, fromNodeId: id2, toNodeId: id3 },
 ]);
 ```
 
@@ -341,7 +400,7 @@ await adapter.transaction(async (tx) => {
   // All operations in transaction
   await tx.execute('INSERT INTO kg_nodes ...');
   await tx.execute('INSERT INTO kg_edges ...');
-  
+
   // Rollback on error
   if (error) {
     await tx.rollback();
@@ -360,7 +419,7 @@ console.log({
   averageDegree: stats.averageDegree,
   density: stats.density,
   nodesByType: stats.nodesByType,
-  edgesByType: stats.edgesByType
+  edgesByType: stats.edgesByType,
 });
 ```
 
@@ -413,6 +472,7 @@ The knowledge graph uses the following tables:
 ## Examples
 
 See the [examples](./examples) directory for:
+
 - Basic usage and CRUD operations
 - Knowledge extraction from documents
 - Building a chat memory system

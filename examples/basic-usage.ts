@@ -1,4 +1,4 @@
-import { createKnowledgeGraph, NodeType, EdgeType, KnowledgeExtractor } from '../src';
+import { createKnowledgeGraph, CommonEdgeType, KnowledgeExtractor } from '../src';
 
 async function main() {
   // Create a knowledge graph with SQLite backend
@@ -16,7 +16,7 @@ async function main() {
   
   // Add some people
   const alice = await graph.addNode({
-    type: NodeType.PERSON,
+    type: 'PERSON',
     label: 'Alice Johnson',
     properties: {
       email: 'alice@example.com',
@@ -28,7 +28,7 @@ async function main() {
   console.log(`✅ Created person: ${alice.label}`);
   
   const bob = await graph.addNode({
-    type: NodeType.PERSON,
+    type: 'PERSON',
     label: 'Bob Smith',
     properties: {
       email: 'bob@example.com',
@@ -41,7 +41,7 @@ async function main() {
   
   // Add a company
   const techCorp = await graph.addNode({
-    type: NodeType.ORGANIZATION,
+    type: 'ORGANIZATION',
     label: 'TechCorp Inc',
     properties: {
       industry: 'Technology',
@@ -54,7 +54,7 @@ async function main() {
   
   // Add a location
   const office = await graph.addNode({
-    type: NodeType.LOCATION,
+    type: 'LOCATION',
     label: 'TechCorp HQ',
     properties: {
       address: '123 Tech Street, San Francisco, CA',
@@ -68,7 +68,7 @@ async function main() {
   
   // Create relationships
   await graph.addEdge({
-    type: EdgeType.EMPLOYED_BY,
+    type: CommonEdgeType.EMPLOYED_BY,
     fromNodeId: alice.id,
     toNodeId: techCorp.id,
     properties: {
@@ -79,7 +79,7 @@ async function main() {
   console.log(`✅ ${alice.label} -> EMPLOYED_BY -> ${techCorp.label}`);
   
   await graph.addEdge({
-    type: EdgeType.EMPLOYED_BY,
+    type: CommonEdgeType.EMPLOYED_BY,
     fromNodeId: bob.id,
     toNodeId: techCorp.id,
     properties: {
@@ -90,7 +90,7 @@ async function main() {
   console.log(`✅ ${bob.label} -> EMPLOYED_BY -> ${techCorp.label}`);
   
   await graph.addEdge({
-    type: EdgeType.COLLEAGUE_OF,
+    type: CommonEdgeType.COLLEAGUE_OF,
     fromNodeId: alice.id,
     toNodeId: bob.id,
     bidirectional: true, // Creates edges in both directions
@@ -98,7 +98,7 @@ async function main() {
   console.log(`✅ ${alice.label} <-> COLLEAGUE_OF <-> ${bob.label}`);
   
   await graph.addEdge({
-    type: EdgeType.LOCATED_IN,
+    type: CommonEdgeType.LOCATED_IN,
     fromNodeId: techCorp.id,
     toNodeId: office.id,
   });
@@ -108,7 +108,7 @@ async function main() {
   console.log('\n=== Querying the Graph ===');
   
   // Query by type
-  const allPeople = await graph.queryByType(NodeType.PERSON);
+  const allPeople = await graph.queryByType('PERSON');
   console.log(`\nFound ${allPeople.nodes.length} people:`);
   for (const person of allPeople.nodes) {
     console.log(`  - ${person.label} (${person.properties.occupation})`);

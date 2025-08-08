@@ -1,0 +1,605 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Knowledge Graph Visualization Demo</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      label {
+        font-weight: 500;
+        font-size: 14px;
+      }
+
+      select,
+      button {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+        background: white;
+      }
+
+      button {
+        background: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.2s;
+      }
+
+      button:hover {
+        background: #0056b3;
+      }
+
+      button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+
+      .graph-container {
+        width: 100%;
+        height: 600px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        background: white;
+        position: relative;
+      }
+
+      .info-panel {
+        margin-top: 20px;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+      }
+
+      .info-panel h3 {
+        margin-top: 0;
+        color: #333;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .stat-card {
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 6px;
+        border-left: 4px solid #007bff;
+      }
+
+      .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #007bff;
+      }
+
+      .stat-label {
+        font-size: 14px;
+        color: #666;
+        margin-top: 5px;
+      }
+
+      .loading {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 18px;
+        color: #666;
+      }
+
+      .error {
+        color: #dc3545;
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+
+      .success {
+        color: #155724;
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        padding: 10px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>Knowledge Graph Visualization Demo</h1>
+        <p>Interactive visualization of knowledge graphs using multiple backends</p>
+      </div>
+
+      <div class="controls">
+        <div class="control-group">
+          <label for="backend">Visualization Backend:</label>
+          <select id="backend">
+            <option value="d3">D3.js</option>
+            <option value="vis-network">vis-network</option>
+            <option value="cytoscape">Cytoscape.js</option>
+            <option value="three">Three.js (3D)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="layout">Layout:</label>
+          <select id="layout">
+            <option value="force">Force-Directed</option>
+            <option value="hierarchical">Hierarchical</option>
+            <option value="circular">Circular</option>
+            <option value="grid">Grid</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="visualization-type">Visualization Type:</label>
+          <select id="visualization-type">
+            <option value="all">All Nodes</option>
+            <option value="people">People Only</option>
+            <option value="organizations">Organizations Only</option>
+            <option value="search">Search Results</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label for="search-query">Search Query:</label>
+          <input type="text" id="search-query" placeholder="Enter search term..." value="engineer" />
+        </div>
+
+        <div class="control-group">
+          <label>&nbsp;</label>
+          <button id="visualize-btn">Visualize</button>
+        </div>
+
+        <div class="control-group">
+          <label>&nbsp;</label>
+          <button id="export-btn">Export PNG</button>
+        </div>
+      </div>
+
+      <div id="graph-container" class="graph-container">
+        <div class="loading">Select options and click "Visualize" to start</div>
+      </div>
+
+      <div class="info-panel">
+        <h3>Graph Statistics</h3>
+        <div class="stats" id="stats">
+          <div class="stat-card">
+            <div class="stat-value" id="node-count">-</div>
+            <div class="stat-label">Total Nodes</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="edge-count">-</div>
+            <div class="stat-label">Total Edges</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="avg-degree">-</div>
+            <div class="stat-label">Average Degree</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="density">-</div>
+            <div class="stat-label">Graph Density</div>
+          </div>
+        </div>
+
+        <div id="node-types">
+          <h4>Nodes by Type:</h4>
+          <div id="node-types-list"></div>
+        </div>
+
+        <div id="edge-types">
+          <h4>Edges by Type:</h4>
+          <div id="edge-types-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      // Note: This is a demonstration of the API structure
+      // In a real implementation, you would import the actual library
+
+      console.log('Knowledge Graph Visualization Demo');
+      console.log('This demo shows the API structure for the visualization system');
+
+      // Real implementation using API calls
+      class RealVisualizationManager {
+        constructor() {
+          this.isInitialized = false;
+          this.apiBase = '/api';
+        }
+
+        async initializeVisualization(backend, container, options) {
+          console.log(`Initializing ${backend} visualization...`);
+          this.isInitialized = true;
+          this.backend = backend;
+          this.container = container;
+          this.options = options;
+
+          // Show loading
+          container.innerHTML = '<div class="loading">Loading graph data...</div>';
+
+          // Fetch graph statistics
+          try {
+            const statsResponse = await fetch(`${this.apiBase}/stats`);
+            const stats = await statsResponse.json();
+
+            if (stats.error) {
+              throw new Error(stats.error);
+            }
+
+            this.updateStats(stats);
+            this.showGraphVisualization(stats);
+          } catch (error) {
+            console.error('Failed to load graph data:', error);
+            container.innerHTML = `<div class="error">Failed to load graph data: ${error.message}</div>`;
+          }
+        }
+
+        async visualizeSearch(query, options) {
+          console.log(`Visualizing search results for: "${query}"`);
+
+          try {
+            const response = await fetch(`${this.apiBase}/search?q=${encodeURIComponent(query)}`);
+            const data = await response.json();
+
+            if (data.error) {
+              throw new Error(data.error);
+            }
+
+            // Update stats based on search results
+            const stats = {
+              nodeCount: data.nodes.length,
+              edgeCount: data.edges.length,
+              averageDegree: data.nodes.length > 0 ? (data.edges.length / data.nodes.length).toFixed(2) : '0',
+              density: data.nodes.length > 1 ? (data.edges.length / (data.nodes.length * (data.nodes.length - 1))).toFixed(4) : '0',
+              nodesByType: {},
+              edgesByType: {},
+            };
+
+            // Count nodes by type
+            data.nodes.forEach((node) => {
+              stats.nodesByType[node.type] = (stats.nodesByType[node.type] || 0) + 1;
+            });
+
+            // Count edges by type
+            data.edges.forEach((edge) => {
+              stats.edgesByType[edge.type] = (stats.edgesByType[edge.type] || 0) + 1;
+            });
+
+            this.updateStats(stats);
+            this.showGraphVisualization(data);
+          } catch (error) {
+            console.error('Search failed:', error);
+            showMessage(`Search failed: ${error.message}`, 'error');
+          }
+        }
+
+        async exportImage(format, options) {
+          console.log(`Exporting ${format} image...`);
+          // In a real implementation, this would capture the canvas and return image data
+          return 'data:image/png;base64,mock-image-data';
+        }
+
+        showGraphVisualization(data) {
+          const container = this.container;
+
+          // Create a simple graph visualization using SVG
+          const nodes = data.nodes || [];
+          const edges = data.edges || [];
+
+          console.log('Visualization data:', { nodes: nodes.length, edges: edges.length });
+          console.log('Sample edge:', edges[0]);
+          console.log('Sample node:', nodes[0]);
+
+          if (nodes.length === 0) {
+            container.innerHTML = '<div class="loading">No data to visualize</div>';
+            return;
+          }
+
+          // Calculate layout (simple circular layout)
+          const centerX = 300;
+          const centerY = 250;
+          const radius = Math.min(200, Math.max(100, 300 / nodes.length));
+          const nodeRadius = 15;
+
+          const nodePositions = {};
+          nodes.forEach((node, index) => {
+            const angle = (index / nodes.length) * 2 * Math.PI;
+            nodePositions[node.id] = {
+              x: centerX + radius * Math.cos(angle),
+              y: centerY + radius * Math.sin(angle),
+            };
+          });
+
+          // Create SVG
+          const svg = `
+            <svg width="600" height="500" style="border: 1px solid #ccc;">
+              <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                  refX="9" refY="3.5" orient="auto">
+                  <polygon points="0 0, 10 3.5, 0 7" fill="#666" />
+                </marker>
+              </defs>
+              
+                            <!-- Edges -->
+              ${edges
+                .map((edge) => {
+                  const from = nodePositions[edge.from];
+                  const to = nodePositions[edge.to];
+                  if (!from || !to) return '';
+
+                  const midX = (from.x + to.x) / 2;
+                  const midY = (from.y + to.y) / 2;
+
+                  return `
+                    <line x1="${from.x}" y1="${from.y}" x2="${to.x}" y2="${to.y}" 
+                      stroke="#666" stroke-width="2" marker-end="url(#arrowhead)" />
+                    <text x="${midX}" y="${midY - 5}" text-anchor="middle" 
+                      font-size="8" fill="#333" font-weight="bold">${edge.type}</text>
+                  `;
+                })
+                .join('')}
+              
+              <!-- Nodes -->
+              ${nodes
+                .map((node) => {
+                  const pos = nodePositions[node.id];
+                  if (!pos) return '';
+
+                  const colors = {
+                    PERSON: '#4CAF50',
+                    ORGANIZATION: '#2196F3',
+                    LOCATION: '#FF9800',
+                    SKILL: '#9C27B0',
+                  };
+
+                  const color = colors[node.type] || '#666';
+
+                  return `
+                    <circle cx="${pos.x}" cy="${pos.y}" r="${nodeRadius}" 
+                      fill="${color}" stroke="#333" stroke-width="2" />
+                    <text x="${pos.x}" y="${pos.y + 5}" text-anchor="middle" 
+                      font-size="9" fill="white" font-weight="bold">${node.label.substring(0, 10)}</text>
+                    <text x="${pos.x}" y="${pos.y + 18}" text-anchor="middle" 
+                      font-size="7" fill="white">${node.type}</text>
+                  `;
+                })
+                .join('')}
+            </svg>
+          `;
+
+          container.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+              <h3>Knowledge Graph Visualization</h3>
+              <p>Showing ${nodes.length} nodes and ${edges.length} edges</p>
+              ${svg}
+              <div style="margin-top: 20px; font-size: 12px; color: #666;">
+                <strong>Node Types:</strong> ${Object.keys(data.nodesByType || {}).join(', ')}<br>
+                <strong>Edge Types:</strong> ${Object.keys(data.edgesByType || {}).join(', ')}
+              </div>
+            </div>
+          `;
+        }
+
+        updateStats(stats) {
+          document.getElementById('node-count').textContent = stats.nodeCount || 0;
+          document.getElementById('edge-count').textContent = stats.edgeCount || 0;
+          document.getElementById('avg-degree').textContent = stats.averageDegree || '0';
+          document.getElementById('density').textContent = stats.density || '0';
+
+          // Update node types
+          const nodeTypesList = document.getElementById('node-types-list');
+          if (stats.nodeTypes) {
+            nodeTypesList.innerHTML = Object.entries(stats.nodeTypes)
+              .map(([type, count]) => `<div><strong>${type}:</strong> ${count}</div>`)
+              .join('');
+          }
+
+          // Update edge types
+          const edgeTypesList = document.getElementById('edge-types-list');
+          if (stats.edgeTypes) {
+            edgeTypesList.innerHTML = Object.entries(stats.edgeTypes)
+              .map(([type, count]) => `<div><strong>${type}:</strong> ${count}</div>`)
+              .join('');
+          }
+        }
+      }
+
+      // Initialize the demo
+      const vizManager = new RealVisualizationManager();
+      const container = document.getElementById('graph-container');
+
+      // Event handlers
+      document.getElementById('visualize-btn').addEventListener('click', async () => {
+        const backend = document.getElementById('backend').value;
+        const layout = document.getElementById('layout').value;
+        const vizType = document.getElementById('visualization-type').value;
+        const searchQuery = document.getElementById('search-query').value;
+
+        try {
+          // Show loading
+          container.innerHTML = '<div class="loading">Initializing visualization...</div>';
+
+          // Initialize visualization
+          await vizManager.initializeVisualization(backend, container, {
+            visualization: {
+              layout: layout,
+              nodeColors: {
+                PERSON: '#4CAF50',
+                ORGANIZATION: '#2196F3',
+                LOCATION: '#FF9800',
+                SKILL: '#9C27B0',
+              },
+              edgeColors: {
+                EMPLOYED_BY: '#2196F3',
+                HAS_SKILL: '#4CAF50',
+                KNOWS: '#FF9800',
+                LOCATED_IN: '#9C27B0',
+              },
+            },
+            events: {
+              onNodeClick: (node, event) => {
+                console.log('Clicked node:', node.label);
+                showMessage(`Clicked: ${node.label}`, 'success');
+              },
+              onEdgeClick: (edge, event) => {
+                console.log('Clicked edge:', edge.type);
+                showMessage(`Clicked edge: ${edge.type}`, 'success');
+              },
+            },
+          });
+
+          // Perform visualization based on type
+          if (vizType === 'search' && searchQuery.trim()) {
+            await vizManager.visualizeSearch(searchQuery.trim());
+          } else if (vizType === 'people') {
+            // Load only people
+            try {
+              const response = await fetch(`${vizManager.apiBase}/snapshot/type?type=PERSON`);
+              const data = await response.json();
+
+              if (data.error) {
+                throw new Error(data.error);
+              }
+
+              vizManager.showGraphVisualization(data);
+            } catch (error) {
+              console.error('Failed to load people data:', error);
+              showMessage(`Failed to load data: ${error.message}`, 'error');
+            }
+          } else if (vizType === 'organizations') {
+            // Load only organizations
+            try {
+              const response = await fetch(`${vizManager.apiBase}/snapshot/type?type=ORGANIZATION`);
+              const data = await response.json();
+
+              if (data.error) {
+                throw new Error(data.error);
+              }
+
+              vizManager.showGraphVisualization(data);
+            } catch (error) {
+              console.error('Failed to load organization data:', error);
+              showMessage(`Failed to load data: ${error.message}`, 'error');
+            }
+          } else {
+            // Load all data for other visualization types
+            try {
+              const response = await fetch(`${vizManager.apiBase}/snapshot/all`);
+              const data = await response.json();
+
+              if (data.error) {
+                throw new Error(data.error);
+              }
+
+              vizManager.showGraphVisualization(data);
+            } catch (error) {
+              console.error('Failed to load all data:', error);
+              showMessage(`Failed to load data: ${error.message}`, 'error');
+            }
+          }
+
+          showMessage('Visualization created successfully!', 'success');
+        } catch (error) {
+          console.error('Visualization error:', error);
+          showMessage(`Error: ${error.message}`, 'error');
+        }
+      });
+
+      document.getElementById('export-btn').addEventListener('click', async () => {
+        try {
+          const imageData = await vizManager.exportImage('png', {
+            quality: 0.9,
+            maxWidth: 1920,
+            maxHeight: 1080,
+          });
+
+          // Create download link
+          const link = document.createElement('a');
+          link.href = imageData;
+          link.download = 'knowledge-graph.png';
+          link.click();
+
+          showMessage('Image exported successfully!', 'success');
+        } catch (error) {
+          console.error('Export error:', error);
+          showMessage(`Export error: ${error.message}`, 'error');
+        }
+      });
+
+      function showMessage(message, type) {
+        // Remove existing messages
+        const existingMessages = document.querySelectorAll('.message');
+        existingMessages.forEach((msg) => msg.remove());
+
+        // Create new message
+        const messageDiv = document.createElement('div');
+        messageDiv.className = `message ${type}`;
+        messageDiv.textContent = message;
+
+        // Insert before controls
+        const controls = document.querySelector('.controls');
+        controls.parentNode.insertBefore(messageDiv, controls);
+
+        // Auto-remove after 3 seconds
+        setTimeout(() => {
+          messageDiv.remove();
+        }, 3000);
+      }
+
+      // Add some CSS for messages
+      const style = document.createElement('style');
+      style.textContent = `
+            .message {
+                margin-bottom: 15px;
+                padding: 10px;
+                border-radius: 4px;
+                font-weight: 500;
+            }
+        `;
+      document.head.appendChild(style);
+
+      console.log('Demo initialized. Click "Visualize" to see the mock visualization!');
+    </script>
+  </body>
+</html>

@@ -13,9 +13,5 @@ export default defineConfig({
   clean: true,
   minify: false,
   target: 'es2022',
-  external: [
-    '@cloudflare/workers-types',
-    '@libsql/client',
-    'better-sqlite3'
-  ],
+  external: ['@cloudflare/workers-types', '@libsql/client', 'better-sqlite3', 'bun:sqlite'],
 });

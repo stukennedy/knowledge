@@ -38,6 +38,13 @@ export class D1Adapter extends BaseAdapter {
   private async createTables(): Promise<void> {
     if (!this.db) throw new Error('Database not initialized');
     
+    // Use appropriate column naming based on configuration
+    const fromNodeCol = this.columnNaming === 'snake_case' ? 'from_node_id' : 'fromNodeId';
+    const toNodeCol = this.columnNaming === 'snake_case' ? 'to_node_id' : 'toNodeId';
+    const createdAtCol = this.columnNaming === 'snake_case' ? 'created_at' : 'createdAt';
+    const updatedAtCol = this.columnNaming === 'snake_case' ? 'updated_at' : 'updatedAt';
+    const sourceSessionIdsCol = this.columnNaming === 'snake_case' ? 'source_session_ids' : 'sourceSessionIds';
+    
     // Create nodes table
     await this.db.exec(`
       CREATE TABLE IF NOT EXISTS kg_nodes (
@@ -46,37 +53,37 @@ export class D1Adapter extends BaseAdapter {
         label TEXT NOT NULL,
         properties TEXT NOT NULL DEFAULT '{}',
         confidence REAL NOT NULL DEFAULT 1.0,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL,
-        source_session_ids TEXT
+        ${createdAtCol} INTEGER NOT NULL,
+        ${updatedAtCol} INTEGER NOT NULL,
+        ${sourceSessionIdsCol} TEXT
       );
     `);
     
     await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_nodes_type ON kg_nodes(type);`);
     await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_nodes_label ON kg_nodes(label);`);
-    await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_nodes_created_at ON kg_nodes(created_at);`);
+    await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_nodes_created_at ON kg_nodes(${createdAtCol});`);
     
     // Create edges table
     await this.db.exec(`
       CREATE TABLE IF NOT EXISTS kg_edges (
         id TEXT PRIMARY KEY,
         type TEXT NOT NULL,
-        from_node_id TEXT NOT NULL,
-        to_node_id TEXT NOT NULL,
+        ${fromNodeCol} TEXT NOT NULL,
+        ${toNodeCol} TEXT NOT NULL,
         properties TEXT NOT NULL DEFAULT '{}',
         confidence REAL NOT NULL DEFAULT 1.0,
-        created_at INTEGER NOT NULL,
-        source_session_ids TEXT,
-        FOREIGN KEY (from_node_id) REFERENCES kg_nodes(id) ON DELETE CASCADE,
-        FOREIGN KEY (to_node_id) REFERENCES kg_nodes(id) ON DELETE CASCADE
+        ${createdAtCol} INTEGER NOT NULL,
+        ${sourceSessionIdsCol} TEXT,
+        FOREIGN KEY (${fromNodeCol}) REFERENCES kg_nodes(id) ON DELETE CASCADE,
+        FOREIGN KEY (${toNodeCol}) REFERENCES kg_nodes(id) ON DELETE CASCADE
       );
     `);
     
     await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_edges_type ON kg_edges(type);`);
-    await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_edges_from_node ON kg_edges(from_node_id);`);
-    await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_edges_to_node ON kg_edges(to_node_id);`);
-    await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_edges_from_type ON kg_edges(from_node_id, type);`);
-    await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_edges_to_type ON kg_edges(to_node_id, type);`);
+    await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_edges_from_node ON kg_edges(${fromNodeCol});`);
+    await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_edges_to_node ON kg_edges(${toNodeCol});`);
+    await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_edges_from_type ON kg_edges(${fromNodeCol}, type);`);
+    await this.db.exec(`CREATE INDEX IF NOT EXISTS idx_edges_to_type ON kg_edges(${toNodeCol}, type);`);
     
     // Create indices tables
     await this.db.exec(`
@@ -276,8 +283,13 @@ export class D1Adapter extends BaseAdapter {
     const id = edge.id || crypto.randomUUID();
     const now = Date.now();
     
+    const fromNodeCol = this.translateColumnName('fromNodeId', true);
+    const toNodeCol = this.translateColumnName('toNodeId', true);
+    const createdAtCol = this.translateColumnName('createdAt', true);
+    const sourceSessionIdsCol = this.translateColumnName('sourceSessionIds', true);
+    
     const query = `
-      INSERT INTO kg_edges (id, type, from_node_id, to_node_id, properties, confidence, created_at, source_session_ids)
+      INSERT INTO kg_edges (id, type, ${fromNodeCol}, ${toNodeCol}, properties, confidence, ${createdAtCol}, ${sourceSessionIdsCol})
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
@@ -350,10 +362,11 @@ export class D1Adapter extends BaseAdapter {
   }
   
   async queryEdges(conditions: Record<string, unknown>, limit = 100, offset = 0): Promise<Edge[]> {
+    const translatedConditions = this.translateConditions(conditions);
     const whereClauses: string[] = [];
     const params: unknown[] = [];
     
-    for (const [key, value] of Object.entries(conditions)) {
+    for (const [key, value] of Object.entries(translatedConditions)) {
       whereClauses.push(`${key} = ?`);
       params.push(value);
     }
@@ -367,7 +380,7 @@ export class D1Adapter extends BaseAdapter {
     `;
     
     const results = await this.execute<Record<string, unknown>>(query, params);
-    return results.map(e => this.deserializeEdge(e));
+    return results.map(e => this.deserializeEdge(this.translateResult(e)));
   }
   
   // Index operations
@@ -535,28 +548,37 @@ export class D1Adapter extends BaseAdapter {
   
   // Helper methods
   private deserializeNode(row: Record<string, unknown>): Node {
+    const createdAt = row.createdAt || row.created_at;
+    const updatedAt = row.updatedAt || row.updated_at;
+    const sourceSessionIds = row.sourceSessionIds || row.source_session_ids;
+    
     return {
       id: row.id as string,
       type: row.type as string,
       label: row.label as string,
       properties: typeof row.properties === 'string' ? JSON.parse(row.properties) : row.properties || {},
       confidence: row.confidence as number,
-      createdAt: new Date(row.created_at as string | number),
-      updatedAt: new Date(row.updated_at as string | number),
-      sourceSessionIds: row.source_session_ids ? JSON.parse(row.source_session_ids as string) : undefined,
+      createdAt: new Date(createdAt as string | number),
+      updatedAt: new Date(updatedAt as string | number),
+      sourceSessionIds: sourceSessionIds ? JSON.parse(sourceSessionIds as string) : undefined,
     };
   }
   
   private deserializeEdge(row: Record<string, unknown>): Edge {
+    const fromNodeId = row.fromNodeId || row.from_node_id;
+    const toNodeId = row.toNodeId || row.to_node_id;
+    const createdAt = row.createdAt || row.created_at;
+    const sourceSessionIds = row.sourceSessionIds || row.source_session_ids;
+    
     return {
       id: row.id as string,
       type: row.type as string,
-      fromNodeId: row.from_node_id as string,
-      toNodeId: row.to_node_id as string,
+      fromNodeId: fromNodeId as string,
+      toNodeId: toNodeId as string,
       properties: typeof row.properties === 'string' ? JSON.parse(row.properties) : row.properties || {},
       confidence: row.confidence as number,
-      createdAt: new Date(row.created_at as string | number),
-      sourceSessionIds: row.source_session_ids ? JSON.parse(row.source_session_ids as string) : undefined,
+      createdAt: new Date(createdAt as string | number),
+      sourceSessionIds: sourceSessionIds ? JSON.parse(sourceSessionIds as string) : undefined,
     };
   }
 }

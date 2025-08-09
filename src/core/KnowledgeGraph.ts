@@ -383,12 +383,12 @@ export class KnowledgeGraph<TNodeType extends string = string> {
       const edges: KnowledgeEdge[] = [];
 
       if (options.direction === 'out' || options.direction === 'both') {
-        const outEdges = await this.adapter.queryEdges({ from_node_id: nodeId });
+        const outEdges = await this.adapter.queryEdges({ fromNodeId: nodeId });
         edges.push(...outEdges.map((e) => this.normalizeEdge(e)));
       }
 
       if (options.direction === 'in' || options.direction === 'both') {
-        const inEdges = await this.adapter.queryEdges({ to_node_id: nodeId });
+        const inEdges = await this.adapter.queryEdges({ toNodeId: nodeId });
         edges.push(...inEdges.map((e) => this.normalizeEdge(e)));
       }
 
@@ -604,8 +604,8 @@ export class KnowledgeGraph<TNodeType extends string = string> {
     return {
       id: edge.id,
       type: edge.type,
-      fromNodeId: edge.fromNodeId || edge.from_node_id,
-      toNodeId: edge.toNodeId || edge.to_node_id,
+      fromNodeId: edge.fromNodeId,
+      toNodeId: edge.toNodeId,
       properties: typeof edge.properties === 'string' ? JSON.parse(edge.properties) : edge.properties,
       confidence: edge.confidence,
       createdAt: edge.createdAt instanceof Date ? edge.createdAt : new Date(edge.createdAt),

@@ -279,8 +279,17 @@ export class SQLiteAdapter extends BaseAdapter {
     if (!this.drizzle) throw new Error('Database not initialized');
 
     const whereConditions = Object.entries(conditions).map(([key, value]) => {
+      // Map snake_case to camelCase for schema fields
+      const fieldMap: Record<string, string> = {
+        'from_node_id': 'fromNodeId',
+        'to_node_id': 'toNodeId',
+        'created_at': 'createdAt',
+        'updated_at': 'updatedAt',
+        'source_session_ids': 'sourceSessionIds'
+      };
+      const schemaKey = fieldMap[key] || key;
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const column = (schema.edges as any)[key];
+      const column = (schema.edges as any)[schemaKey];
       return eq(column, value);
     });
 

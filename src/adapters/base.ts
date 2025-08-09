@@ -118,13 +118,6 @@ export interface AdapterConfig {
   autoCreate?: boolean;
 
   /**
-   * Column naming convention for database fields
-   * 'camelCase' (default): fromNodeId, toNodeId
-   * 'snake_case': from_node_id, to_node_id
-   */
-  columnNaming?: 'camelCase' | 'snake_case';
-
-  /**
    * Additional adapter-specific options
    */
   options?: Record<string, unknown>;
@@ -136,98 +129,16 @@ export interface AdapterConfig {
 export abstract class BaseAdapter implements DatabaseAdapter {
   protected config: AdapterConfig;
   protected tablePrefix: string;
-  protected columnNaming: 'camelCase' | 'snake_case';
 
   constructor(config: AdapterConfig = {}) {
     this.config = config;
     this.tablePrefix = config.tablePrefix || '';
-    this.columnNaming = config.columnNaming || 'camelCase';
   }
 
   protected getTableName(table: string): string {
     return this.tablePrefix ? `${this.tablePrefix}_${table}` : table;
   }
 
-  /**
-   * Translate column names from camelCase to snake_case or vice versa
-   */
-  protected translateColumnName(name: string, toDatabase: boolean = true): string {
-    if (this.columnNaming === 'snake_case') {
-      if (toDatabase) {
-        // camelCase to snake_case
-        const mapping: Record<string, string> = {
-          fromNodeId: 'from_node_id',
-          toNodeId: 'to_node_id',
-          createdAt: 'created_at',
-          updatedAt: 'updated_at',
-          sourceSessionIds: 'source_session_ids',
-          indexKey: 'index_key',
-          nodeId: 'node_id',
-          edgeId: 'edge_id',
-        };
-        return mapping[name] || name;
-      } else {
-        // snake_case to camelCase
-        const mapping: Record<string, string> = {
-          from_node_id: 'fromNodeId',
-          to_node_id: 'toNodeId',
-          created_at: 'createdAt',
-          updated_at: 'updatedAt',
-          source_session_ids: 'sourceSessionIds',
-          index_key: 'indexKey',
-          node_id: 'nodeId',
-          edge_id: 'edgeId',
-        };
-        return mapping[name] || name;
-      }
-    }
-    return name;
-  }
-
-  /**
-   * Translate all column names in a conditions object
-   */
-  protected translateConditions(conditions: Record<string, unknown>): Record<string, unknown> {
-    if (this.columnNaming === 'snake_case') {
-      const translated: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(conditions)) {
-        translated[this.translateColumnName(key, true)] = value;
-      }
-      return translated;
-    }
-    return conditions;
-  }
-
-  /**
-   * Translate result columns back from database format
-   */
-  protected translateResult<T extends Record<string, any>>(row: T): T {
-    if (this.columnNaming === 'snake_case' && row) {
-      const translated = { ...row };
-
-      // Translate known fields
-      const mappings: [string, string][] = [
-        ['from_node_id', 'fromNodeId'],
-        ['to_node_id', 'toNodeId'],
-        ['created_at', 'createdAt'],
-        ['updated_at', 'updatedAt'],
-        ['source_session_ids', 'sourceSessionIds'],
-        ['index_key', 'indexKey'],
-        ['node_id', 'nodeId'],
-        ['edge_id', 'edgeId'],
-      ];
-
-      for (const [snakeCase, camelCase] of mappings) {
-        if (snakeCase in translated) {
-          (translated as any)[camelCase] = (translated as any)[snakeCase];
-          delete (translated as any)[snakeCase];
-        }
-      }
-
-      return translated as T;
-    }
-    return row;
-  }
 
   protected log(_message: string, ..._args: unknown[]): void {
     // Logging disabled for now to avoid console warnings

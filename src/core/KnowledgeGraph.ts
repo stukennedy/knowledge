@@ -383,12 +383,12 @@ export class KnowledgeGraph<TNodeType extends string = string> {
       const edges: KnowledgeEdge[] = [];
 
       if (options.direction === 'out' || options.direction === 'both') {
-        const outEdges = await this.adapter.queryEdges({ fromNodeId: nodeId });
+        const outEdges = await this.adapter.queryEdges({ from_node_id: nodeId });
         edges.push(...outEdges.map((e) => this.normalizeEdge(e)));
       }
 
       if (options.direction === 'in' || options.direction === 'both') {
-        const inEdges = await this.adapter.queryEdges({ toNodeId: nodeId });
+        const inEdges = await this.adapter.queryEdges({ to_node_id: nodeId });
         edges.push(...inEdges.map((e) => this.normalizeEdge(e)));
       }
 

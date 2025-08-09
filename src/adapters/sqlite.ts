@@ -279,7 +279,7 @@ export class SQLiteAdapter extends BaseAdapter {
     if (!this.drizzle) throw new Error('Database not initialized');
 
     const whereConditions = Object.entries(conditions).map(([key, value]) => {
-      // Map snake_case to camelCase for schema fields
+      // Map camelCase to snake_case for schema fields (Drizzle schema uses camelCase in TypeScript)
       const fieldMap: Record<string, string> = {
         'from_node_id': 'fromNodeId',
         'to_node_id': 'toNodeId',

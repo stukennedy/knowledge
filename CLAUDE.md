@@ -60,9 +60,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
    - Cycle detection and clustering
 
 5. **Visualization** (`src/visualization/`)
-   - Multiple backends: D3.js, vis-network, Cytoscape.js, Three.js
-   - `GraphVisualizationManager`: Unified interface for all backends
-   - Each backend in separate file (d3.ts, vis-network.ts, etc.)
+   - Mermaid diagram generation for knowledge graphs
+   - `MermaidGraphVisualizer`: Generates Mermaid diagram syntax
+   - `MermaidUtils`: Utilities for HTML/Markdown output
 
 ### Type System
 
@@ -85,7 +85,7 @@ Tables created in all adapters:
 
 1. **Adapter Pattern**: Database operations abstracted behind adapters
 2. **Factory Pattern**: `createKnowledgeGraph()` and `createAdapter()` for easy instantiation
-3. **Builder Pattern**: Visualization configurations built incrementally
-4. **Strategy Pattern**: Different visualization backends implement same interface
+3. **Builder Pattern**: Mermaid diagram options built incrementally
+4. **Strategy Pattern**: Different output formats (HTML, Markdown, Live Editor) for Mermaid diagrams
 
 when writing commits and pull requests don't put Claude Code as the author

@@ -23,12 +23,6 @@ export default defineConfig({
     '@libsql/client', 
     'better-sqlite3', 
     'bun:sqlite', 
-    './bun-sqlite',
-    'd3',
-    'cytoscape',
-    'three',
-    'vis-network',
-    'vis-data',
-    'vis-util'
+    './bun-sqlite'
   ],
 });

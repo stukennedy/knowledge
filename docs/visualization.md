@@ -1,498 +1,298 @@
 # Knowledge Graph Visualization
 
-The `@fluxgraph/knowledge` package includes a comprehensive visualization system that allows you to create beautiful, interactive visualizations of your knowledge graphs using multiple visualization backends.
+The `@fluxgraph/knowledge` package includes a Mermaid-based visualization system that allows you to create clear, portable visualizations of your knowledge graphs.
 
 ## Features
 
-- **Multiple Backends**: Support for D3.js, vis-network, Cytoscape.js, and Three.js
-- **Interactive Visualizations**: Zoom, pan, drag, hover, and click interactions
-- **Flexible Layouts**: Force-directed, hierarchical, circular, grid, and custom layouts
-- **Custom Styling**: Color schemes, node shapes, edge styles, and more
-- **Export Capabilities**: Export visualizations as PNG, SVG, or JPEG
-- **Performance Optimization**: Automatic optimization for large graphs
-- **Event Handling**: Rich event system for custom interactions
-- **Snapshot System**: Create visual snapshots from different graph queries
+- **Mermaid Diagrams**: Generate standard Mermaid diagram syntax
+- **Multiple Output Formats**: Markdown, HTML, or Mermaid Live Editor
+- **Flexible Layouts**: Top-Down (TD), Left-Right (LR), and other Mermaid layouts
+- **Custom Styling**: Node and edge styling through Mermaid syntax
+- **Lightweight**: No heavy dependencies, just text-based diagrams
+- **Version Control Friendly**: Text format is easy to diff and merge
+- **Wide Compatibility**: Works in GitHub, GitLab, documentation tools, etc.
 
 ## Quick Start
 
 ```typescript
-import { createKnowledgeGraph, GraphVisualizationManager, type VisualizationBackend } from '@fluxgraph/knowledge';
+import { KnowledgeGraph, SQLiteAdapter, MermaidGraphVisualizer, MermaidUtils } from '@fluxgraph/knowledge';
 
 // Create a knowledge graph
-const graph = createKnowledgeGraph('sqlite', {
+const adapter = new SQLiteAdapter({
   connection: './knowledge.db',
 });
-
+const graph = new KnowledgeGraph(adapter);
 await graph.initialize();
 
-// Create visualization manager
-const vizManager = new GraphVisualizationManager(graph);
-
-// Initialize visualization with D3.js backend
-const container = document.getElementById('graph-container');
-await vizManager.initializeVisualization('d3', container, {
-  visualization: {
-    layout: 'force',
-    nodeColors: {
-      PERSON: '#4CAF50',
-      ORGANIZATION: '#2196F3',
-      LOCATION: '#FF9800',
-    },
-  },
-  events: {
-    onNodeClick: (node, event) => {
-      console.log('Clicked node:', node.label);
-    },
-  },
-});
+// Create Mermaid visualizer
+const visualizer = new MermaidGraphVisualizer(graph);
 
 // Visualize a specific node's network
-await vizManager.visualizeNode('node-id', 2);
-```
-
-## Visualization Backends
-
-### D3.js
-
-- **Best for**: Small to medium graphs with custom styling
-- **Features**: Most customizable, full control over rendering
-- **Performance**: Good for up to 500 nodes
-- **Use case**: When you need complete control over the visualization
-
-```typescript
-await vizManager.initializeVisualization('d3', container, {
-  visualization: {
-    layout: 'force',
-    layoutOptions: {
-      force: {
-        charge: -1000,
-        linkDistance: 100,
-        gravity: 0.1,
-      },
-    },
-  },
+const diagram = await visualizer.generateFromNode('node-id', 2, {
+  direction: 'TD',
+  includeProperties: true,
 });
+
+// Output as Markdown
+const markdown = MermaidUtils.toMarkdown(diagram, 'My Graph');
+console.log(markdown);
 ```
 
-### vis-network
+## Visualization Methods
 
-- **Best for**: Medium to large graphs with good performance
-- **Features**: Built-in physics simulation, clustering, navigation
-- **Performance**: Good for up to 2000 nodes
-- **Use case**: General-purpose graph visualization
-
-```typescript
-await vizManager.initializeVisualization('vis-network', container, {
-  visualization: {
-    layout: 'force',
-    physics: {
-      enabled: true,
-      solver: 'forceAtlas2Based',
-    },
-  },
-});
-```
-
-### Cytoscape.js
-
-- **Best for**: Professional graph analysis and complex layouts
-- **Features**: Extensive layout algorithms, advanced styling
-- **Performance**: Good for up to 1000 nodes
-- **Use case**: When you need advanced graph analysis features
-
-```typescript
-await vizManager.initializeVisualization('cytoscape', container, {
-  visualization: {
-    layout: 'hierarchical',
-    style: [
-      {
-        selector: 'node',
-        style: {
-          'background-color': 'data(color)',
-          label: 'data(label)',
-        },
-      },
-    ],
-  },
-});
-```
-
-### Three.js (3D)
-
-- **Best for**: 3D visualizations and spatial relationships
-- **Features**: 3D rendering, orbit controls, immersive experience
-- **Performance**: Good for up to 500 nodes
-- **Use case**: When you want 3D visualization or spatial data
-
-```typescript
-await vizManager.initializeVisualization('three', container, {
-  visualization: {
-    layout: 'force',
-    enable3D: true,
-  },
-});
-```
-
-## Visualization Types
-
-### Node Network Visualization
+### Visualize Node Network
 
 Visualize a specific node and its connections up to a certain depth:
 
 ```typescript
-// Visualize Alice's network with depth 2
-await vizManager.visualizeNode('alice-id', 2, {
-  includeMetadata: true,
-  transformOptions: {
-    nodeColorMapping: {
-      PERSON: '#4CAF50',
-      ORGANIZATION: '#2196F3',
-    },
-  },
-});
-```
-
-### Search Results Visualization
-
-Visualize search results from the knowledge graph:
-
-```typescript
-// Search and visualize results
-await vizManager.visualizeSearch('engineer', {
+const diagram = await visualizer.generateFromNode(nodeId, depth, {
+  direction: 'TD', // or 'LR', 'BT', 'RL'
+  includeProperties: true,
   maxNodes: 50,
-  minConfidence: 0.5,
+  maxEdges: 100,
 });
 ```
 
-### Node Type Visualization
+### Visualize Search Results
 
-Visualize all nodes of specific types:
+Create a diagram from search results:
 
 ```typescript
-// Visualize all people and organizations
-await vizManager.visualizeNodeTypes(['PERSON', 'ORGANIZATION'], {
-  includeMetadata: true,
+const diagram = await visualizer.generateFromSearch('engineer', {
+  maxNodes: 20,
+  includeProperties: false,
 });
 ```
 
-### Custom Query Visualization
+### Visualize by Node Types
 
-Visualize results from custom queries:
+Show all nodes of specific types:
 
 ```typescript
-// Create custom query result
-const queryResult = await graph.queryRelated('node-id', {
-  depth: 3,
-  includeEdges: true,
-});
-
-// Visualize the query result
-await vizManager.visualizeQueryResult(queryResult, {
-  includeMetadata: true,
+const diagram = await visualizer.generateFromNodeTypes(['PERSON', 'ORGANIZATION'], {
+  direction: 'LR',
+  includeProperties: true,
 });
 ```
 
-## Styling and Customization
+### Visualize Query Results
+
+Create a diagram from any query result:
+
+```typescript
+const queryResult = await graph.queryRelated(nodeId, { depth: 2 });
+const diagram = visualizer.generateFromQueryResult(queryResult, {
+  direction: 'TD',
+  includeProperties: false,
+});
+```
+
+## Output Formats
+
+### Markdown Output
+
+Perfect for documentation, README files, and wikis:
+
+```typescript
+const markdown = MermaidUtils.toMarkdown(diagram, 'Knowledge Graph');
+// Returns:
+// # Knowledge Graph
+// 
+// ```mermaid
+// graph TD
+//   node1["Label"]
+//   ...
+// ```
+// 
+// **Graph Statistics:** X nodes, Y edges
+```
+
+### HTML Output
+
+Generate a complete HTML page with embedded Mermaid viewer:
+
+```typescript
+const html = MermaidUtils.wrapInHtml(diagram, {
+  title: 'My Knowledge Graph',
+  theme: 'default', // or 'dark', 'forest', 'neutral'
+});
+
+// Save to file
+await fs.writeFile('graph.html', html);
+```
+
+### Mermaid Live Editor
+
+Get a URL to edit the diagram online:
+
+```typescript
+const editorUrl = MermaidUtils.generateLiveEditorUrl(diagram);
+console.log(`Edit online: ${editorUrl}`);
+```
+
+## Configuration Options
+
+### Direction
+
+Control the flow direction of the graph:
+
+- `'TD'` or `'TB'` - Top to Bottom
+- `'BT'` - Bottom to Top
+- `'LR'` - Left to Right
+- `'RL'` - Right to Left
 
 ### Node Styling
 
-```typescript
-const visualizationOptions = {
-  nodeColors: {
-    PERSON: '#4CAF50',
-    ORGANIZATION: '#2196F3',
-    LOCATION: '#FF9800',
-    SKILL: '#9C27B0',
-  },
-  nodeSizes: {
-    PERSON: 20,
-    ORGANIZATION: 25,
-    LOCATION: 18,
-    SKILL: 15,
-  },
-  defaultNodeColor: '#666666',
-  defaultNodeSize: 15,
-};
-```
-
-### Edge Styling
+Customize node appearance by type:
 
 ```typescript
-const visualizationOptions = {
-  edgeColors: {
-    EMPLOYED_BY: '#2196F3',
-    KNOWS: '#4CAF50',
-    LOCATED_IN: '#FF9800',
-    HAS_SKILL: '#9C27B0',
-  },
-  defaultEdgeColor: '#999999',
-  defaultEdgeWidth: 2,
-};
-```
-
-### Layout Options
-
-```typescript
-const layoutOptions = {
-  layout: 'force', // 'force', 'hierarchical', 'circular', 'grid'
-  layoutOptions: {
-    force: {
-      charge: -1000,
-      linkDistance: 100,
-      gravity: 0.1,
-    },
-    hierarchical: {
-      direction: 'UD',
-      nodeSpacing: 150,
-      levelSeparation: 200,
-    },
-  },
-};
-```
-
-## Event Handling
-
-The visualization system provides rich event handling capabilities:
-
-```typescript
-const events = {
-  onNodeClick: (node, event) => {
-    console.log('Node clicked:', node.label);
-    // Show node details, navigate to related nodes, etc.
-  },
-
-  onNodeHover: (node, event) => {
-    console.log('Node hovered:', node.label);
-    // Show tooltip, highlight connections, etc.
-  },
-
-  onNodeDrag: (node, event) => {
-    console.log('Node dragged:', node.label);
-    // Update positions, save layout, etc.
-  },
-
-  onEdgeClick: (edge, event) => {
-    console.log('Edge clicked:', edge.type);
-    // Show edge details, highlight path, etc.
-  },
-
-  onEdgeHover: (edge, event) => {
-    console.log('Edge hovered:', edge.type);
-    // Show tooltip, highlight connected nodes, etc.
-  },
-
-  onCanvasClick: (event) => {
-    console.log('Canvas clicked');
-    // Clear selection, reset view, etc.
-  },
-
-  onZoom: (scale, event) => {
-    console.log('Zoom level:', scale);
-    // Update UI, save view state, etc.
-  },
-
-  onPan: (x, y, event) => {
-    console.log('Panned to:', x, y);
-    // Update UI, save view state, etc.
-  },
-};
-```
-
-## Export Functionality
-
-Export visualizations as images:
-
-```typescript
-// Export as PNG
-const pngData = await vizManager.exportImage('png', {
-  quality: 0.9,
-  maxWidth: 1920,
-  maxHeight: 1080,
-});
-
-// Export as SVG
-const svgData = await vizManager.exportImage('svg');
-
-// Export as JPEG
-const jpegData = await vizManager.exportImage('jpg', {
-  quality: 0.8,
-});
-
-// Create download link
-const link = document.createElement('a');
-link.href = pngData;
-link.download = 'knowledge-graph.png';
-link.click();
-```
-
-## Performance Optimization
-
-### Automatic Backend Selection
-
-The system can automatically recommend the best backend based on graph size:
-
-```typescript
-import { PerformanceUtils } from '@fluxgraph/knowledge';
-
-const stats = await graph.getStats();
-const recommendedBackend = PerformanceUtils.getRecommendedBackend(stats.nodeCount, stats.edgeCount);
-
-console.log('Recommended backend:', recommendedBackend);
-```
-
-### Graph Optimization
-
-For large graphs, the system can optimize the visualization:
-
-```typescript
-import { PerformanceUtils } from '@fluxgraph/knowledge';
-
-// Check if graph is suitable for real-time visualization
-const isRealTime = PerformanceUtils.isSuitableForRealTime(stats.nodeCount, stats.edgeCount);
-
-// Optimize snapshot for performance
-const optimizedSnapshot = PerformanceUtils.optimizeSnapshot(
-  snapshot,
-  1000 // max nodes
-);
-```
-
-## Utility Classes
-
-### Color Utilities
-
-```typescript
-import { ColorUtils } from '@fluxgraph/knowledge';
-
-// Generate color palettes
-const nodeColors = ColorUtils.generateNodeColorPalette(['PERSON', 'ORGANIZATION']);
-const edgeColors = ColorUtils.generateEdgeColorPalette(['KNOWS', 'EMPLOYED_BY']);
-
-// Get confidence-based colors
-const color = ColorUtils.getConfidenceColor(0.8); // Returns green for high confidence
-
-// Interpolate between colors
-const interpolatedColor = ColorUtils.interpolateColor('#ff0000', '#00ff00', 0.5);
-```
-
-### Layout Utilities
-
-```typescript
-import { LayoutUtils } from '@fluxgraph/knowledge';
-
-// Calculate optimal node sizes
-const nodeSizes = LayoutUtils.calculateOptimalNodeSizes(stats.nodesByType, stats.nodeCount);
-
-// Calculate optimal edge widths
-const edgeWidths = LayoutUtils.calculateOptimalEdgeWidths(stats.edgesByType, stats.edgeCount);
-
-// Get layout options for graph size
-const layoutOptions = LayoutUtils.getLayoutOptionsForGraphSize(stats.nodeCount, stats.edgeCount);
-```
-
-## Advanced Usage
-
-### Custom Visualizers
-
-You can create custom visualizers by extending the base class:
-
-```typescript
-import { BaseGraphVisualizer } from '@fluxgraph/knowledge';
-
-class CustomGraphVisualizer extends BaseGraphVisualizer {
-  protected async initializeBackend(): Promise<void> {
-    // Custom initialization logic
+const options = {
+  nodeTypeStyles: {
+    PERSON: 'fill:#4CAF50,stroke:#333,stroke-width:2px',
+    ORGANIZATION: 'fill:#2196F3,stroke:#333,stroke-width:2px',
+    LOCATION: 'fill:#FF9800,stroke:#333,stroke-width:2px',
   }
+};
+```
 
-  protected async renderBackend(snapshot: GraphSnapshot): Promise<void> {
-    // Custom rendering logic
-  }
+### Properties Display
 
-  // Implement other abstract methods...
+Control whether to show node/edge properties:
+
+```typescript
+const options = {
+  includeProperties: true, // Show properties in labels
+};
+```
+
+### Size Limits
+
+Prevent diagrams from becoming too large:
+
+```typescript
+const options = {
+  maxNodes: 50,  // Maximum number of nodes
+  maxEdges: 100, // Maximum number of edges
+};
+```
+
+## Example: Complete Visualization Workflow
+
+```typescript
+import { KnowledgeGraph, SQLiteAdapter, MermaidGraphVisualizer, MermaidUtils } from '@fluxgraph/knowledge';
+import * as fs from 'fs/promises';
+
+async function visualizeKnowledgeGraph() {
+  // Initialize graph
+  const adapter = new SQLiteAdapter({ connection: './knowledge.db' });
+  const graph = new KnowledgeGraph(adapter);
+  await graph.initialize();
+
+  // Create visualizer
+  const visualizer = new MermaidGraphVisualizer(graph);
+
+  // Generate diagram for a person's network
+  const person = await graph.findNodesByLabel('Alice Johnson');
+  const diagram = await visualizer.generateFromNode(person[0].id, 2, {
+    direction: 'TD',
+    includeProperties: true,
+    nodeTypeStyles: {
+      PERSON: 'fill:#4CAF50',
+      ORGANIZATION: 'fill:#2196F3',
+    },
+  });
+
+  // Output in multiple formats
+  
+  // 1. Save as Markdown for documentation
+  const markdown = MermaidUtils.toMarkdown(diagram, "Alice's Network");
+  await fs.writeFile('docs/alice-network.md', markdown);
+
+  // 2. Generate HTML for web viewing
+  const html = MermaidUtils.wrapInHtml(diagram, {
+    title: "Alice's Professional Network",
+    theme: 'default',
+  });
+  await fs.writeFile('visualizations/alice-network.html', html);
+
+  // 3. Get Live Editor URL for interactive editing
+  const editorUrl = MermaidUtils.generateLiveEditorUrl(diagram);
+  console.log(`Edit diagram online: ${editorUrl}`);
+
+  // 4. Print diagram stats
+  console.log(`Generated diagram with ${diagram.nodeCount} nodes and ${diagram.edgeCount} edges`);
+  
+  await graph.close();
 }
 ```
 
-### View State Management
+## Rendering Mermaid Diagrams
 
-Save and restore view states:
+### In Markdown Files
 
-```typescript
-// Save current view state
-const viewState = vizManager.getVisualizer()?.getViewState();
+Mermaid diagrams in Markdown are automatically rendered by:
+- GitHub
+- GitLab
+- Many documentation tools (MkDocs, Docusaurus, etc.)
+- VS Code with Mermaid extensions
+- Obsidian and other note-taking apps
 
-// Restore view state
-vizManager.getVisualizer()?.setViewState(viewState);
+### In Web Pages
+
+Add Mermaid.js to your HTML:
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true });</script>
+
+<div class="mermaid">
+  <!-- Paste diagram content here -->
+  graph TD
+    A[Node] --> B[Another Node]
+</div>
 ```
 
-### Snapshot Creation
+### In Node.js Applications
 
-Create custom snapshots:
+Use the generated HTML or serve it through your web framework:
 
 ```typescript
-import { GraphSnapshotCreator } from '@fluxgraph/knowledge';
-
-const snapshotCreator = new GraphSnapshotCreator(graph);
-
-// Create snapshot from query result
-const snapshot = await snapshotCreator.createFromQueryResult(queryResult, {
-  includeMetadata: true,
-  transformOptions: {
-    nodeColorMapping: { PERSON: '#4CAF50' },
-    edgeColorMapping: { KNOWS: '#2196F3' },
-  },
+app.get('/graph/:nodeId', async (req, res) => {
+  const diagram = await visualizer.generateFromNode(req.params.nodeId, 2);
+  const html = MermaidUtils.wrapInHtml(diagram, {
+    title: 'Knowledge Graph Visualization',
+  });
+  res.send(html);
 });
 ```
 
-## Browser Compatibility
+## Performance Considerations
 
-The visualization system works in all modern browsers:
+Mermaid diagrams are lightweight and render quickly, but for very large graphs:
 
-- **D3.js**: Chrome 60+, Firefox 55+, Safari 12+, Edge 79+
-- **vis-network**: Chrome 60+, Firefox 55+, Safari 12+, Edge 79+
-- **Cytoscape.js**: Chrome 60+, Firefox 55+, Safari 12+, Edge 79+
-- **Three.js**: Chrome 60+, Firefox 55+, Safari 12+, Edge 79+
+1. **Use `maxNodes` and `maxEdges`** to limit diagram size
+2. **Reduce depth** when visualizing node networks
+3. **Disable properties** (`includeProperties: false`) for cleaner diagrams
+4. **Use specific node types** instead of visualizing everything
 
-## Performance Guidelines
+## Why Mermaid?
 
-- **Small graphs (< 100 nodes)**: Use any backend, D3.js recommended for custom styling
-- **Medium graphs (100-500 nodes)**: vis-network or Cytoscape.js recommended
-- **Large graphs (500-1000 nodes)**: vis-network recommended for best performance
-- **Very large graphs (> 1000 nodes)**: Consider filtering or clustering
+We chose Mermaid for knowledge graph visualization because:
 
-## Troubleshooting
+1. **No Dependencies**: Unlike D3, Three.js, or Cytoscape, Mermaid requires no heavy libraries
+2. **Text-Based**: Diagrams are just text, making them easy to version control
+3. **Portable**: Works everywhere - documentation, wikis, web pages
+4. **Maintainable**: Simple to understand and modify
+5. **Accessible**: Screen reader friendly when properly rendered
+6. **Standard**: Widely adopted format with excellent tooling support
 
-### Common Issues
+## Migration from Previous Versions
 
-1. **Visualization not rendering**: Check if the container element exists and has dimensions
-2. **Performance issues**: Use the performance utilities to optimize large graphs
-3. **Memory leaks**: Always call `destroyVisualization()` when done
-4. **Layout not working**: Check if the layout options are compatible with your backend
+If you're upgrading from a version that used D3/Three.js/Cytoscape backends:
 
-### Debug Mode
+1. Replace `GraphVisualizationManager` with `MermaidGraphVisualizer`
+2. Update visualization method calls (see examples above)
+3. Remove any frontend dependencies on visualization libraries
+4. Update your rendering logic to use Mermaid.js or embed in Markdown
 
-Enable debug mode for more detailed logging:
-
-```typescript
-await vizManager.initializeVisualization('d3', container, {
-  visualization: {
-    debug: true,
-  },
-});
-```
-
-## Examples
-
-See the `examples/` directory for complete working examples:
-
-- `visualization-example.ts`: Comprehensive TypeScript example
-- `visualization-demo.html`: Interactive HTML demo
-
-## API Reference
-
-For complete API documentation, see the TypeScript definitions in the source code or run:
-
-```bash
-npm run docs
-```
-
-The visualization system is designed to be flexible, performant, and easy to use while providing powerful customization options for advanced users.
+The API has been simplified while maintaining the core functionality of generating graph visualizations from your knowledge graph data.

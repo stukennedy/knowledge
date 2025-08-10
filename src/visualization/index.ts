@@ -378,4 +378,4 @@ export const LayoutUtils = {
   },
 };
 
-export type VisualizationBackend = 'mermaid' | 'd3' | 'vis-network' | 'cytoscape' | 'three';
+export type VisualizationBackend = 'mermaid';

@@ -378,7 +378,11 @@ export class SqlStorageAdapter extends BaseAdapter {
     const params: any[] = [];
 
     Object.entries(conditions).forEach(([key, value]) => {
-      whereClauses.push(`${key} = ?`);
+      // Convert camelCase to snake_case for database column names
+      const dbKey = key === 'fromNodeId' ? 'from_node_id' : 
+                    key === 'toNodeId' ? 'to_node_id' : 
+                    key;
+      whereClauses.push(`${dbKey} = ?`);
       params.push(value);
     });
 

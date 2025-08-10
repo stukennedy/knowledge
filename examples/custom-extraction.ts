@@ -1,4 +1,4 @@
-import { createKnowledgeGraph, KnowledgeExtractor } from '../src';
+import { KnowledgeGraph, SQLiteAdapter, KnowledgeExtractor } from '../src';
 
 // User-defined node types
 enum MyNodeType {
@@ -17,10 +17,11 @@ enum MyEdgeType {
 }
 
 async function main() {
-  const graph = await createKnowledgeGraph<MyNodeType>('sqlite', {
+  const adapter = new SQLiteAdapter({
     connection: ':memory:',
   });
-
+  const graph = new KnowledgeGraph<MyNodeType>(adapter);
+  
   await graph.initialize();
 
   const extractor = new KnowledgeExtractor(graph);

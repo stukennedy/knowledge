@@ -4,11 +4,11 @@ A flexible, database-agnostic knowledge graph implementation for TypeScript. Bui
 
 ## Features
 
-- 🗄️ **Multiple Database Backends** - SQLite, Cloudflare D1, LibSQL (Turso)
+- 🗄️ **Multiple Database Backends** - SQLite, Cloudflare D1, Cloudflare Durable Objects (SqlStorage), LibSQL (Turso)
 - 🔍 **Full-Text Search** - Built-in search indexing and querying
 - 🧠 **Knowledge Extraction** - Extract entities and relationships from text
 - 📊 **Graph Algorithms** - Path finding, centrality, community detection
-- 🎨 **Interactive Visualizations** - D3.js, vis-network, Cytoscape.js, and Three.js backends
+- 🎨 **Graph Visualization** - Generate Mermaid diagrams for easy embedding and sharing
 - 🚀 **High Performance** - Optimized queries with proper indexing
 - 🔒 **Type Safe** - Full TypeScript support with generics
 - 💾 **Transaction Support** - Atomic operations for data consistency
@@ -29,21 +29,43 @@ npm install @cloudflare/workers-types
 npm install @libsql/client
 ```
 
+For rendering Mermaid diagrams in the browser:
+```html
+<!-- Add to your HTML -->
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+```
+
 ## Quick Start
 
 ```typescript
-import { createKnowledgeGraph, NodeType, EdgeType } from '@fluxgraph/knowledge';
+import { KnowledgeGraph, SQLiteAdapter, CommonEdgeType } from '@fluxgraph/knowledge';
 
-// Create a knowledge graph with SQLite
-const graph = createKnowledgeGraph('sqlite', {
+// Define your own node types
+enum MyNodeType {
+  PERSON = 'PERSON',
+  ORGANIZATION = 'ORGANIZATION',
+  LOCATION = 'LOCATION',
+  DOCUMENT = 'DOCUMENT',
+}
+
+// Define your own edge types (can also extend CommonEdgeType)
+enum MyEdgeType {
+  EMPLOYED_BY = 'EMPLOYED_BY',
+  FOUNDED = 'FOUNDED',
+  INVESTED_IN = 'INVESTED_IN',
+}
+
+// Create adapter and knowledge graph
+const adapter = new SQLiteAdapter({
   connection: './my-knowledge.db', // or ':memory:' for in-memory
 });
+const graph = new KnowledgeGraph<MyNodeType>(adapter);
 
 await graph.initialize();
 
 // Add nodes
 const person = await graph.addNode({
-  type: NodeType.PERSON,
+  type: MyNodeType.PERSON,
   label: 'Alice Johnson',
   properties: {
     email: 'alice@example.com',
@@ -52,16 +74,16 @@ const person = await graph.addNode({
 });
 
 const company = await graph.addNode({
-  type: NodeType.ORGANIZATION,
+  type: MyNodeType.ORGANIZATION,
   label: 'TechCorp',
   properties: {
     industry: 'Technology',
   },
 });
 
-// Create relationships
+// Create relationships (using custom edge type)
 await graph.addEdge({
-  type: EdgeType.EMPLOYED_BY,
+  type: MyEdgeType.EMPLOYED_BY,
   fromNodeId: person.id,
   toNodeId: company.id,
   properties: {
@@ -69,10 +91,10 @@ await graph.addEdge({
   },
 });
 
-// Query the graph
+// Query the graph (using CommonEdgeType)
 const colleagues = await graph.queryRelated(person.id, {
   depth: 2,
-  edgeTypes: [EdgeType.COLLEAGUE_OF],
+  edgeTypes: [CommonEdgeType.COLLEAGUE_OF],
 });
 
 // Search
@@ -81,36 +103,43 @@ const results = await graph.search({
   limit: 10,
 });
 
-// Visualize the graph
-import { GraphVisualizationManager } from '@fluxgraph/knowledge';
+// Generate Mermaid visualization
+import { MermaidGraphVisualizer, MermaidUtils } from '@fluxgraph/knowledge';
 
-const vizManager = new GraphVisualizationManager(graph);
-const container = document.getElementById('graph-container');
+const visualizer = new MermaidGraphVisualizer(graph);
 
-await vizManager.initializeVisualization('d3', container, {
-  visualization: {
-    layout: 'force',
-    nodeColors: {
-      PERSON: '#4CAF50',
-      ORGANIZATION: '#2196F3',
-    },
-  },
+// Generate diagram for a node and its connections
+const diagram = await visualizer.generateFromNode(person.id, 2, {
+  direction: 'TD',
+  includeProperties: true,
 });
 
-await vizManager.visualizeNode(person.id, 2);
+// Convert to Markdown for documentation
+const markdown = MermaidUtils.toMarkdown(diagram, 'Person Network');
+console.log(markdown);
+
+// Or generate HTML page for web viewing
+const html = MermaidUtils.wrapInHtml(diagram, {
+  title: 'Knowledge Graph',
+  theme: 'default',
+});
 ```
 
 ## Database Adapters
 
+To use a knowledge graph, create an adapter instance for your database and pass it to `KnowledgeGraph`. This gives you full control over the adapter configuration.
+
 ### SQLite (Node.js)
 
 ```typescript
-import { createKnowledgeGraph } from '@fluxgraph/knowledge';
+import { KnowledgeGraph, SQLiteAdapter } from '@fluxgraph/knowledge';
 
-const graph = createKnowledgeGraph('sqlite', {
+const adapter = new SQLiteAdapter({
   connection: './database.db',
   debug: true,
 });
+const graph = new KnowledgeGraph(adapter);
+await graph.initialize();
 ```
 
 ### Cloudflare D1
@@ -127,6 +156,27 @@ export default {
     // Use the graph...
   },
 };
+```
+
+### Cloudflare Durable Objects (SqlStorage)
+
+```typescript
+import { SqlStorageAdapter, KnowledgeGraph } from '@fluxgraph/knowledge';
+
+// Inside your Durable Object class
+export class MyDurableObject {
+  constructor(private state: DurableObjectState) {}
+  
+  async fetch(request: Request) {
+    // Use the Durable Object's SQL storage
+    const adapter = new SqlStorageAdapter();
+    adapter.setSqlStorage(this.state.storage.sql);
+    const graph = new KnowledgeGraph(adapter);
+    await graph.initialize();
+    
+    // Use the graph...
+  }
+}
 ```
 
 ### Custom Adapter
@@ -329,44 +379,55 @@ const components = await algorithms.findConnectedComponents();
 
 ## Visualization
 
-Create beautiful, interactive visualizations of your knowledge graphs:
+@fluxgraph/knowledge generates Mermaid diagrams for knowledge graph visualization. Mermaid is a lightweight, text-based diagramming format that's widely supported.
+
+### Generate Mermaid Diagrams
 
 ```typescript
-import { GraphVisualizationManager } from '@fluxgraph/knowledge';
+import { MermaidGraphVisualizer, MermaidUtils } from '@fluxgraph/knowledge';
 
-const vizManager = new GraphVisualizationManager(graph);
+const visualizer = new MermaidGraphVisualizer(graph);
 
-// Initialize with D3.js backend
-const container = document.getElementById('graph-container');
-await vizManager.initializeVisualization('d3', container, {
-  visualization: {
-    layout: 'force',
-    nodeColors: {
-      PERSON: '#4CAF50',
-      ORGANIZATION: '#2196F3',
-      LOCATION: '#FF9800',
-    },
-  },
-  events: {
-    onNodeClick: (node) => console.log('Clicked:', node.label),
-  },
+// Visualize a specific node and its neighborhood
+const diagram = await visualizer.generateFromNode(nodeId, depth, {
+  direction: 'TD', // Top-Down, or 'LR' for Left-Right
+  includeProperties: true,
+  maxNodes: 50,
 });
 
-// Visualize different parts of the graph
-await vizManager.visualizeNode('node-id', 2); // Node network
-await vizManager.visualizeSearch('engineer'); // Search results
-await vizManager.visualizeNodeTypes(['PERSON', 'ORGANIZATION']); // By type
+// Search and visualize
+const searchDiagram = await visualizer.generateFromSearch('engineer', {
+  maxNodes: 20,
+});
 
-// Export as image
-const imageData = await vizManager.exportImage('png');
+// Visualize by node types
+const typesDiagram = await visualizer.generateFromNodeTypes(['PERSON', 'ORGANIZATION']);
 ```
 
-### Supported Backends
+### Output Formats
 
-- **D3.js**: Most customizable, best for small-medium graphs
-- **vis-network**: Excellent performance, good for large graphs
-- **Cytoscape.js**: Professional features, advanced analysis
-- **Three.js**: 3D visualization capabilities
+```typescript
+// As Markdown (for documentation)
+const markdown = MermaidUtils.toMarkdown(diagram, 'Graph Title');
+
+// As HTML page (for web viewing)
+const html = MermaidUtils.wrapInHtml(diagram, {
+  title: 'My Knowledge Graph',
+  theme: 'default', // or 'dark', 'forest', 'neutral'
+});
+
+// Get Mermaid Live Editor URL
+const editorUrl = MermaidUtils.generateLiveEditorUrl(diagram);
+```
+
+### Why Mermaid?
+
+- ✅ **No Dependencies**: Works with any Mermaid renderer
+- ✅ **Lightweight**: Text-based format, minimal overhead
+- ✅ **Portable**: Works in Markdown, GitHub, GitLab, etc.
+- ✅ **Version Control**: Text format is diff-friendly
+- ✅ **Easy Integration**: Embed in docs, wikis, or web pages
+- ✅ **Interactive**: Supports clicking, zooming in compatible viewers
 
 See [Visualization Documentation](./docs/visualization.md) for complete details.
 

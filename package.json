@@ -1,6 +1,6 @@
 {
   "name": "@fluxgraph/knowledge",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "type": "module",
   "description": "A flexible, database-agnostic knowledge graph implementation for TypeScript",
   "main": "dist/index.js",
@@ -67,10 +67,7 @@
     "@libsql/client": "^0.15.10",
     "@types/better-sqlite3": "^7.6.13",
     "@types/bun": "^1.2.19",
-    "@types/cytoscape": "^3.21.9",
-    "@types/d3": "^7.4.3",
     "@types/node": "^20.19.9",
-    "@types/three": "^0.179.0",
     "@typescript-eslint/eslint-plugin": "^8.39.0",
     "@typescript-eslint/parser": "^8.39.0",
     "@vitest/coverage-v8": "^1.6.1",

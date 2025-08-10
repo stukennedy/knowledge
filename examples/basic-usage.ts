@@ -1,11 +1,12 @@
-import { createKnowledgeGraph, CommonEdgeType, KnowledgeExtractor } from '../src';
+import { KnowledgeGraph, SQLiteAdapter, CommonEdgeType, KnowledgeExtractor } from '../src';
 
 async function main() {
   // Create a knowledge graph with SQLite backend
-  const graph = await createKnowledgeGraph('sqlite', {
+  const adapter = new SQLiteAdapter({
     connection: './knowledge.db', // Use ':memory:' for in-memory database
     debug: true,
   });
+  const graph = new KnowledgeGraph(adapter);
   
   await graph.initialize();
   
@@ -184,7 +185,8 @@ async function main() {
   
   console.log(`\nExtracted from conversation:`);
   console.log(`  - ${conversationExtraction.nodes.length} entities`);
-  console.log(`  - Topics: ${conversationExtraction.metadata?.topics?.join(', ') || 'none'}`);
+  const topics = conversationExtraction.metadata?.topics;
+  console.log(`  - Topics: ${Array.isArray(topics) ? topics.join(', ') : 'none'}`);
   
   // ============ Graph Statistics ============
   console.log('\n=== Graph Statistics ===');

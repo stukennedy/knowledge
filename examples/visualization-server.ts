@@ -9,23 +9,23 @@
  * - Real-time visualization using the @fluxgraph/knowledge library
  */
 
-import { createKnowledgeGraph, GraphVisualizationManager, CommonEdgeType } from '../src';
-import type { KnowledgeGraph } from '../src';
+import { KnowledgeGraph, SQLiteAdapter, MermaidGraphVisualizer, MermaidUtils, CommonEdgeType } from '../src';
 
 const PORT = 3000;
 
 // Initialize knowledge graph
 let graph: KnowledgeGraph | null = null;
-let vizManager: GraphVisualizationManager | null = null;
+let visualizer: MermaidGraphVisualizer | null = null;
 
 async function initializeGraph() {
-  graph = await createKnowledgeGraph('sqlite', {
+  const adapter = new SQLiteAdapter({
     connection: ':memory:',
     debug: false,
   });
-
+  graph = new KnowledgeGraph(adapter);
+  
   await graph.initialize();
-  vizManager = new GraphVisualizationManager(graph);
+  visualizer = new MermaidGraphVisualizer(graph);
 
   // Create sample data
   await createSampleData();
@@ -304,7 +304,7 @@ Bun.serve({
 });
 
 async function handleAPI(pathname: string, req: Request) {
-  if (!graph || !vizManager) {
+  if (!graph || !visualizer) {
     return new Response(JSON.stringify({ error: 'Graph not initialized' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
@@ -319,55 +319,43 @@ async function handleAPI(pathname: string, req: Request) {
           headers: { 'Content-Type': 'application/json' },
         });
 
-      case '/api/snapshot/all':
-        // Get all node types and combine results
-        const allNodes: any[] = [];
-        const allEdges: any[] = [];
-
-        // Query by each node type to get all nodes
+      case '/api/diagram/all':
+        // Generate Mermaid diagram for all nodes
         const nodeTypes = ['PERSON', 'ORGANIZATION', 'LOCATION', 'SKILL', 'DOCUMENT', 'CONCEPT', 'TOPIC', 'PRODUCT', 'SERVICE', 'FINANCIAL', 'GOAL', 'EVENT'];
-        for (const type of nodeTypes) {
-          const result = await graph.queryByType(type, { limit: 1000, includeEdges: true });
-          allNodes.push(...result.nodes);
-          allEdges.push(...result.edges);
-        }
-
-        const snapshot = await vizManager.snapshotCreator.createFromQueryResult(
-          {
-            nodes: allNodes,
-            edges: allEdges,
-            relevanceScore: 1.0,
-          },
-          {
-            includeMetadata: true,
-          }
-        );
-        return new Response(JSON.stringify(snapshot), {
+        const allDiagram = await visualizer.generateFromNodeTypes(nodeTypes, {
+          direction: 'TD',
+          includeProperties: false,
+          maxNodes: 100,
+          maxEdges: 200,
+        });
+        return new Response(JSON.stringify(allDiagram), {
           headers: { 'Content-Type': 'application/json' },
         });
 
-      case '/api/snapshot/type':
+      case '/api/diagram/type':
         const url = new URL(req.url);
         const nodeType = url.searchParams.get('type') || 'PERSON';
-        const typeSnapshot = await vizManager.snapshotCreator.createFromNodeTypes([nodeType], {
-          includeMetadata: true,
+        const typeDiagram = await visualizer.generateFromNodeTypes([nodeType], {
+          direction: 'LR',
+          includeProperties: true,
         });
-        return new Response(JSON.stringify(typeSnapshot), {
+        return new Response(JSON.stringify(typeDiagram), {
           headers: { 'Content-Type': 'application/json' },
         });
 
-      case '/api/search':
+      case '/api/diagram/search':
         const searchUrl = new URL(req.url);
         const query = searchUrl.searchParams.get('q') || '';
-        const searchResults = await graph.search({ query, limit: 20 });
-        const searchSnapshot = await vizManager.snapshotCreator.createFromQueryResult(searchResults, {
-          includeMetadata: true,
+        const searchDiagram = await visualizer.generateFromSearch(query, {
+          direction: 'TD',
+          maxNodes: 20,
+          includeProperties: false,
         });
-        return new Response(JSON.stringify(searchSnapshot), {
+        return new Response(JSON.stringify(searchDiagram), {
           headers: { 'Content-Type': 'application/json' },
         });
 
-      case '/api/node':
+      case '/api/diagram/node':
         const nodeUrl = new URL(req.url);
         const nodeId = nodeUrl.searchParams.get('id');
         const depth = parseInt(nodeUrl.searchParams.get('depth') || '2');
@@ -377,11 +365,41 @@ async function handleAPI(pathname: string, req: Request) {
             headers: { 'Content-Type': 'application/json' },
           });
         }
-        const nodeSnapshot = await vizManager.snapshotCreator.createFromNode(nodeId, depth, {
-          includeMetadata: true,
+        const nodeDiagram = await visualizer.generateFromNode(nodeId, depth, {
+          direction: 'TD',
+          includeProperties: true,
         });
-        return new Response(JSON.stringify(nodeSnapshot), {
+        return new Response(JSON.stringify(nodeDiagram), {
           headers: { 'Content-Type': 'application/json' },
+        });
+
+      case '/api/render/html':
+        // Render diagram as HTML
+        const renderUrl = new URL(req.url);
+        const renderNodeId = renderUrl.searchParams.get('nodeId');
+        const renderDepth = parseInt(renderUrl.searchParams.get('depth') || '2');
+        
+        let diagram;
+        if (renderNodeId) {
+          diagram = await visualizer.generateFromNode(renderNodeId, renderDepth, {
+            direction: 'TD',
+            includeProperties: true,
+          });
+        } else {
+          // Render all if no specific node
+          diagram = await visualizer.generateFromNodeTypes(['PERSON', 'ORGANIZATION'], {
+            direction: 'TD',
+            includeProperties: false,
+          });
+        }
+        
+        const html = MermaidUtils.wrapInHtml(diagram, {
+          title: 'Knowledge Graph Visualization',
+          theme: 'default',
+        });
+        
+        return new Response(html, {
+          headers: { 'Content-Type': 'text/html' },
         });
 
       default:
@@ -400,17 +418,18 @@ async function handleAPI(pathname: string, req: Request) {
 }
 
 console.log(`
-🚀 Knowledge Graph Visualization Server
-======================================
+🚀 Knowledge Graph Mermaid Visualization Server
+================================================
 Server running at: http://localhost:${PORT}
 
 Available endpoints:
-- GET /                     - Visualization demo UI
-- GET /api/stats           - Graph statistics
-- GET /api/snapshot/all    - All nodes snapshot
-- GET /api/snapshot/type   - Nodes by type (?type=PERSON)
-- GET /api/search          - Search nodes (?q=engineer)
-- GET /api/node            - Node neighborhood (?id=xxx&depth=2)
+- GET /                      - Visualization demo UI
+- GET /api/stats            - Graph statistics
+- GET /api/diagram/all      - All nodes as Mermaid diagram
+- GET /api/diagram/type     - Nodes by type (?type=PERSON)
+- GET /api/diagram/search   - Search diagram (?q=engineer)
+- GET /api/diagram/node     - Node neighborhood (?id=xxx&depth=2)
+- GET /api/render/html      - Render as HTML (?nodeId=xxx&depth=2)
 
 Open http://localhost:${PORT} in your browser to see the demo!
 `);

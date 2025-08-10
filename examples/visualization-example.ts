@@ -1,28 +1,28 @@
-import { createKnowledgeGraph, GraphVisualizationManager, PerformanceUtils, ColorUtils, LayoutUtils, type VisualizationBackend } from '../src';
+import { KnowledgeGraph, SQLiteAdapter, MermaidGraphVisualizer, MermaidUtils } from '../src';
 
 /**
- * Comprehensive example demonstrating knowledge graph visualization
+ * Comprehensive example demonstrating knowledge graph visualization with Mermaid
  *
  * This example shows how to:
  * - Create a knowledge graph with sample data
- * - Visualize the graph using different backends
- * - Handle interactions and events
- * - Export visualizations
- * - Optimize performance for large graphs
+ * - Generate Mermaid diagrams from graph data
+ * - Export visualizations in different formats
+ * - Create interactive HTML visualizations
  */
 async function main() {
   console.log('🚀 Knowledge Graph Visualization Example\n');
 
   // Create a knowledge graph
-  const graph = await createKnowledgeGraph('sqlite', {
+  const adapter = new SQLiteAdapter({
     connection: ':memory:', // Use in-memory database for this example
     debug: true,
   });
-
+  const graph = new KnowledgeGraph(adapter);
+  
   await graph.initialize();
 
-  // Create visualization manager
-  const vizManager = new GraphVisualizationManager(graph);
+  // Create Mermaid visualizer
+  const visualizer = new MermaidGraphVisualizer(graph);
 
   // ============ Create Sample Data ============
   console.log('=== Creating Sample Data ===');
@@ -253,168 +253,100 @@ async function main() {
     console.log(`  - ${type}: ${count}`);
   });
 
-  // ============ Visualization Examples ============
-  console.log('\n=== Visualization Examples ===');
-
-  // Note: In a real browser environment, you would create an HTML container
-  // and pass it to the visualization manager. For this example, we'll
-  // demonstrate the API without actual rendering.
+  // ============ Mermaid Visualization Examples ============
+  console.log('\n=== Mermaid Visualization Examples ===');
 
   // Example 1: Visualize Alice's network
   console.log("\n1. Visualizing Alice's network (depth 2)...");
 
-  // In a real application, you would do:
-  /*
-  const container = document.getElementById('graph-container');
-  await vizManager.initializeVisualization('d3', container, {
-    visualization: {
-      layout: 'force',
-      nodeColors: ColorUtils.generateNodeColorPalette(Object.keys(stats.nodesByType)),
-      edgeColors: ColorUtils.generateEdgeColorPalette(Object.keys(stats.edgesByType)),
-    },
-    events: {
-      onNodeClick: (node, event) => {
-        console.log('Clicked node:', node.label);
-      },
-      onEdgeClick: (edge, event) => {
-        console.log('Clicked edge:', edge.type);
-      },
+  const aliceDiagram = await visualizer.generateFromNode(alice.id, 2, {
+    direction: 'TD',
+    includeProperties: true,
+    nodeTypeStyles: {
+      PERSON: 'fill:#4CAF50,stroke:#333,stroke-width:2px',
+      ORGANIZATION: 'fill:#2196F3,stroke:#333,stroke-width:2px',
+      LOCATION: 'fill:#FF9800,stroke:#333,stroke-width:2px',
+      SKILL: 'fill:#9C27B0,stroke:#333,stroke-width:2px',
     },
   });
-  
-  await vizManager.visualizeNode(alice.id, 2, {
-    includeMetadata: true,
-    transformOptions: {
-      nodeColorMapping: {
-        PERSON: '#4CAF50',
-        ORGANIZATION: '#2196F3',
-        LOCATION: '#FF9800',
-        SKILL: '#9C27B0',
-      },
-    },
-  });
-  */
+
+  console.log('Generated Mermaid diagram:');
+  console.log(aliceDiagram.content);
+  console.log(`\nDiagram contains ${aliceDiagram.nodeCount} nodes and ${aliceDiagram.edgeCount} edges`);
 
   // Example 2: Search and visualize
   console.log('\n2. Searching for "engineer" and visualizing results...');
 
-  const searchResults = await graph.search({
-    query: 'engineer',
-    limit: 10,
+  const searchDiagram = await visualizer.generateFromSearch('engineer', {
+    direction: 'LR',
+    maxNodes: 10,
+    includeProperties: false,
   });
 
-  console.log(`Found ${searchResults.nodes.length} nodes matching "engineer"`);
-  searchResults.nodes.forEach((node) => {
-    console.log(`  - ${node.label} (${node.type})`);
-  });
+  console.log('\nGenerated search results as Mermaid diagram');
+  console.log(`Diagram contains ${searchDiagram.nodeCount} nodes and ${searchDiagram.edgeCount} edges`);
 
   // Example 3: Visualize by node types
   console.log('\n3. Visualizing all people and organizations...');
 
-  const peopleAndOrgs = await vizManager.snapshotCreator.createFromNodeTypes(['PERSON', 'ORGANIZATION'], { includeMetadata: true });
-
-  console.log(`Created snapshot with ${peopleAndOrgs.nodes.length} nodes and ${peopleAndOrgs.edges.length} edges`);
-
-  // Example 4: Performance optimization
-  console.log('\n4. Performance optimization example...');
-
-  const isRealTime = PerformanceUtils.isSuitableForRealTime(stats.nodeCount, stats.edgeCount);
-  const recommendedBackend = PerformanceUtils.getRecommendedBackend(stats.nodeCount, stats.edgeCount);
-
-  console.log(`Graph suitable for real-time visualization: ${isRealTime}`);
-  console.log(`Recommended backend: ${recommendedBackend}`);
-
-  // Example 5: Layout optimization
-  console.log('\n5. Layout optimization...');
-
-  const layoutOptions = LayoutUtils.getLayoutOptionsForGraphSize(stats.nodeCount, stats.edgeCount);
-  const nodeSizes = LayoutUtils.calculateOptimalNodeSizes(stats.nodesByType, stats.nodeCount);
-  const edgeWidths = LayoutUtils.calculateOptimalEdgeWidths(stats.edgesByType, stats.edgeCount);
-
-  console.log('Layout options:', layoutOptions);
-  console.log('Optimal node sizes:', nodeSizes);
-  console.log('Optimal edge widths:', edgeWidths);
-
-  // Example 6: Color utilities
-  console.log('\n6. Color utilities...');
-
-  const nodeColors = ColorUtils.generateNodeColorPalette(Object.keys(stats.nodesByType));
-  const edgeColors = ColorUtils.generateEdgeColorPalette(Object.keys(stats.edgesByType));
-
-  console.log('Node color palette:', nodeColors);
-  console.log('Edge color palette:', edgeColors);
-
-  // Example 7: Export functionality (demonstration)
-  console.log('\n7. Export functionality...');
-
-  // In a real application, you would do:
-  /*
-  const imageData = await vizManager.exportImage('png', {
-    quality: 0.9,
-    maxWidth: 1920,
-    maxHeight: 1080,
+  const typesDiagram = await visualizer.generateFromNodeTypes(['PERSON', 'ORGANIZATION'], {
+    direction: 'TB',
+    includeProperties: true,
   });
-  
-  // Create download link
-  const link = document.createElement('a');
-  link.href = imageData;
-  link.download = 'knowledge-graph.png';
-  link.click();
-  */
 
-  console.log('Export functionality would save the visualization as an image');
+  console.log(`\nGenerated diagram with ${typesDiagram.nodeCount} nodes and ${typesDiagram.edgeCount} edges`);
 
-  // ============ Different Backend Examples ============
-  console.log('\n=== Backend Comparison ===');
+  // Example 4: Export to HTML
+  console.log('\n4. Exporting visualization as HTML...');
 
-  const backends: VisualizationBackend[] = ['d3', 'vis-network', 'cytoscape', 'three'];
-
-  backends.forEach((backend) => {
-    const isRecommended = backend === recommendedBackend;
-    console.log(`${backend.toUpperCase()}${isRecommended ? ' (RECOMMENDED)' : ''}:`);
-
-    switch (backend) {
-      case 'd3':
-        console.log('  - Most customizable and flexible');
-        console.log('  - Best for custom styling and interactions');
-        console.log('  - Good for small to medium graphs');
-        console.log('  - Requires more setup but offers full control');
-        break;
-      case 'vis-network':
-        console.log('  - Excellent performance and features');
-        console.log('  - Built-in physics simulation');
-        console.log('  - Good for medium to large graphs');
-        console.log('  - Easy to use with good defaults');
-        break;
-      case 'cytoscape':
-        console.log('  - Professional-grade graph visualization');
-        console.log('  - Extensive layout algorithms');
-        console.log('  - Advanced styling and analysis');
-        console.log('  - Best for complex graph analysis');
-        break;
-      case 'three':
-        console.log('  - 3D visualization capabilities');
-        console.log('  - Immersive experience');
-        console.log('  - Good for spatial relationships');
-        console.log('  - More resource intensive');
-        break;
-    }
-    console.log('');
+  const htmlContent = MermaidUtils.wrapInHtml(aliceDiagram, {
+    title: "Alice's Knowledge Network",
+    theme: 'default',
   });
+
+  console.log('Generated HTML visualization (first 500 chars):');
+  console.log(htmlContent.substring(0, 500) + '...');
+
+  // Save to file (in a real application)
+  // await fs.writeFile('visualization.html', htmlContent);
+
+  // Example 5: Generate Markdown
+  console.log('\n5. Generating Markdown documentation...');
+
+  const markdown = MermaidUtils.toMarkdown(typesDiagram, 'Organization Structure');
+  console.log('\nGenerated Markdown:');
+  console.log(markdown);
+
+  // Example 6: Generate Live Editor URL
+  console.log('\n6. Generating Mermaid Live Editor URL...');
+
+  const liveEditorUrl = MermaidUtils.generateLiveEditorUrl(searchDiagram);
+  console.log('\nOpen this URL to edit the diagram online:');
+  console.log(liveEditorUrl.substring(0, 100) + '...');
+
+  // ============ Mermaid Advantages ============
+  console.log('\n=== Why Mermaid? ===');
+  console.log('✅ No external dependencies for rendering (uses standard Mermaid.js)');
+  console.log('✅ Lightweight and fast generation');
+  console.log('✅ Works in any Markdown viewer (GitHub, GitLab, etc.)');
+  console.log('✅ Easy to embed in documentation');
+  console.log('✅ Can be edited with any text editor');
+  console.log('✅ Version control friendly');
+  console.log('✅ Supports multiple diagram types');
+  console.log('✅ Accessible and SEO-friendly');
 
   // ============ Cleanup ============
-  console.log('=== Cleanup ===');
+  console.log('\n=== Cleanup ===');
 
-  vizManager.destroyVisualization();
   await graph.close();
 
   console.log('✅ Example completed successfully');
   console.log('\n📚 Next steps:');
-  console.log('1. Create an HTML container element');
-  console.log('2. Initialize the visualization manager with your preferred backend');
-  console.log('3. Call visualization methods to render your graph');
-  console.log('4. Add event handlers for interactivity');
-  console.log('5. Use export functionality to save visualizations');
+  console.log('1. Generate Mermaid diagrams from your knowledge graph');
+  console.log('2. Embed diagrams in Markdown documentation');
+  console.log('3. Create interactive HTML visualizations');
+  console.log('4. Use Mermaid Live Editor for online editing');
+  console.log('5. Integrate with your documentation workflow');
 }
 
 // Run the example

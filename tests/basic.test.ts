@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { createKnowledgeGraph, CommonEdgeType } from '../src';
-import type { KnowledgeGraph } from '../src';
+import { KnowledgeGraph, SQLiteAdapter, CommonEdgeType } from '../src';
 
 describe('KnowledgeGraph Basic Tests', () => {
   let graph: KnowledgeGraph;
 
   beforeEach(async () => {
-    graph = await createKnowledgeGraph('sqlite', { connection: ':memory:' });
+    const adapter = new SQLiteAdapter({ connection: ':memory:' });
+    graph = new KnowledgeGraph(adapter);
     await graph.initialize();
   });
 

@@ -1,4 +1,4 @@
-import { createKnowledgeGraph } from '../src';
+import { KnowledgeGraph, SQLiteAdapter } from '../src';
 
 // User-defined node types
 enum MyNodeType {
@@ -18,10 +18,11 @@ enum MyEdgeType {
 
 async function main() {
   // Create a knowledge graph with custom types
-  const graph = await createKnowledgeGraph<MyNodeType>('sqlite', {
+  const adapter = new SQLiteAdapter({
     connection: ':memory:',
   });
-
+  const graph = new KnowledgeGraph<MyNodeType>(adapter);
+  
   await graph.initialize();
 
   // Now we have full type safety with our custom types
